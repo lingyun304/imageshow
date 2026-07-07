@@ -4,8 +4,12 @@ import zlib from 'zlib';
 import readline from 'readline';
 
 const workingDir = process.cwd();
-const IMAGES_DIR = path.join(workingDir, 'public', 'images');
-const OUTPUT_FILE = path.join(workingDir, 'public', 'images-data.json');
+
+// 自动检测运行环境：如果是源码开发目录则使用 public/ 子目录，如果是编译打包后的 dist/ 目录则使用平铺根目录
+const hasPublicDir = fs.existsSync(path.join(workingDir, 'public'));
+
+const IMAGES_DIR = hasPublicDir ? path.join(workingDir, 'public', 'images') : path.join(workingDir, 'images');
+const OUTPUT_FILE = hasPublicDir ? path.join(workingDir, 'public', 'images-data.json') : path.join(workingDir, 'images-data.json');
 
 // Parse PNG metadata (tEXt and iTXt chunks)
 function parsePngMetadata(filePath) {
@@ -377,11 +381,11 @@ function scan() {
 
 // Create directory link helper
 function setupSymlink(targetPath) {
-  const publicDir = path.join(workingDir, 'public');
-  const linkPath = path.join(publicDir, 'images');
+  const baseDir = hasPublicDir ? path.join(workingDir, 'public') : workingDir;
+  const linkPath = path.join(baseDir, 'images');
   
-  if (!fs.existsSync(publicDir)) {
-    fs.mkdirSync(publicDir, { recursive: true });
+  if (!fs.existsSync(baseDir)) {
+    fs.mkdirSync(baseDir, { recursive: true });
   }
   
   if (fs.existsSync(linkPath)) {
@@ -397,7 +401,7 @@ function setupSymlink(targetPath) {
       try {
         fs.rmSync(linkPath, { recursive: true, force: true });
       } catch (err) {
-        console.error('❌ 错误: 无法移除 public/images 文件夹。请手动删除项目 public 文件夹下的 images 目录，然后再试。');
+        console.error(`❌ 错误: 无法移除 ${hasPublicDir ? 'public/' : ''}images 文件夹。请手动删除对应 images 目录，然后再试。`);
         throw err;
       }
     }
@@ -405,7 +409,7 @@ function setupSymlink(targetPath) {
   
   // Create link
   const type = process.platform === 'win32' ? 'junction' : 'dir';
-  console.log(`🔗 正在建立目录链接: public/images -> ${targetPath}`);
+  console.log(`🔗 正在建立目录链接: ${hasPublicDir ? 'public/' : ''}images -> ${targetPath}`);
   fs.symlinkSync(targetPath, linkPath, type);
   console.log('✅ 目录链接建立成功！');
 }
@@ -489,7 +493,8 @@ async function main() {
       setupSymlink(targetPath);
     } else {
       // Double check symlink is correct
-      const linkPath = path.join(workingDir, 'public', 'images');
+      const baseDir = hasPublicDir ? path.join(workingDir, 'public') : workingDir;
+      const linkPath = path.join(baseDir, 'images');
       if (!fs.existsSync(linkPath)) {
         setupSymlink(targetPath);
       }
