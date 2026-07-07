@@ -54,15 +54,45 @@ imageshow/
 npm install
 ```
 
-### 2. 放入您的 AI 图片
-将您 ComfyUI 生成的原图（支持 PNG/WebP）按照您想呈现的分类，拖放到对应的子目录中，例如：
-- `public/images/cyberpunk/street.png`
-- `public/images/nature/forest.webp`
+### 2. 双击运行扫描程序 (绑定与更新目录)
+我们已将扫描目录的脚本打包为双击即用的本地应用（存放于 `bin/` 目录中）：
+- 🖥️ **Windows 用户**: 直接双击运行 `bin/scanner-win.exe`。
+- 🍎 **macOS 用户**: 在终端运行 `bin/scanner-macos`。
 
-### 3. 运行本地扫描脚本
-每当您**添加、删除、重命名**了本地图片，在根目录下运行以下命令以提取参数并重构前端数据库：
+**首次运行**或需要**切换目录**时：
+1. 双击运行 `bin/scanner-win.exe`。
+2. 在弹出的窗口中，**直接把您的 ComfyUI 图片输出文件夹拖入窗口**（或手动输入绝对路径），然后回车。
+3. 扫描器会自动在 `public/` 下创建链接指向该目录（不占磁盘空间），并将配置保存在根目录下的 `directory-config.json` 中。
+4. 随后，它会自动解析该目录下所有分类文件夹的图片参数，并重构前台数据库。
+
+**更换绑定的图片目录**：
+- 直接删除根目录下的 `directory-config.json` 配置文件，或运行程序时传入 `--switch` 参数（例如 `bin/scanner-win.exe --switch`），即可重新拖入绑定新的文件夹。
+
+---
+
+## 🛠️ 快速开始
+
+如果开发人员或运维需要在本地从源码运行或重新编译二进制：
+
+### 1. 安装项目依赖
+在项目根目录下，执行：
 ```bash
+npm install
+```
+
+### 2. 运行本地扫描（Node.js 方式）
+```bash
+# 首次运行或需要切换目录
+npm run scan -- --switch
+
+# 后续快速同步已有目录
 npm run scan
+```
+
+### 3. 重新打包二进制程序
+如果您修改了 `scan-images.js`，可以使用以下命令重新编译生成 `bin/` 下的 Windows 与 macOS 双端可执行程序：
+```bash
+npm run build:bin
 ```
 
 ### 4. 开启本地开发预览
@@ -70,7 +100,7 @@ npm run scan
 ```bash
 npm run dev
 ```
-打开控制台打印的本地地址（通常是 `http://localhost:5173`）即可预览您的超级画廊！
+打开控制台打印的地址（通常是 `http://localhost:5173`）即可预览您的超级画廊！
 
 ---
 

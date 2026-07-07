@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "scan": "node scan-images.js"
+    "scan": "node scan-images.js",
+    "build:bin": "esbuild scan-images.js --bundle --platform=node --format=cjs --outfile=dist-bin/scanner.cjs && pkg dist-bin/scanner.cjs --targets node18-win-x64,node18-macos-x64 --out-path bin/"
   },
   "dependencies": {
     "lucide-react": "^1.23.0",
@@ -19,7 +20,9 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "esbuild": "^0.28.1",
     "oxlint": "^1.71.0",
+    "pkg": "^5.8.1",
     "vite": "^8.1.1"
   }
 }

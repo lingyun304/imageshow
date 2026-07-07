@@ -35,22 +35,37 @@
 
 ---
 
-## 2. 数据库同步 (图片扫描)
-每当您在本地 `images/` 文件夹中**添加、删除或重命名**图片后，都需要运行扫描脚本以更新前台数据库。
+## 2. 数据库同步与目录切换 (双击可执行程序)
+每当您在本地图片文件夹中**添加、删除或重命名**图片后，或者**想要切换展示另一个图片文件夹**时，可以通过运行扫描程序来同步前台数据库。
 
-1. 打开终端（PowerShell 或 CMD），进入项目根目录。
-2. 运行扫描命令：
-   ```bash
-   npm run scan
-   ```
-3. 控制台会输出扫描日志，例如：
+我们已经将扫描程序编译打包为了双击即用的本地应用（存放于项目根目录的 `bin/` 文件夹下）：
+- 🖥️ **Windows 用户**: 直接双击运行 `bin/scanner-win.exe`。
+- 🍎 **macOS 用户**: 在终端中运行 `bin/scanner-macos`（首次运行如遇权限拦截，可在系统的“安全性与隐私”中允许运行，或在终端执行 `chmod +x bin/scanner-macos` 赋予执行权限）。
+
+### 2.1 首次运行：绑定与切换图片目录
+1. **启动程序**：双击运行 `bin/scanner-win.exe`。
+2. **输入路径**：程序会检测到是首次运行，并在控制台中提示：
    ```text
-   🔍 Scanning local folders under public/images...
-   ✅ Scanned: [cyberpunk] cyberpunk_street.jpg (Metadata: Yes)
-   ✅ Scanned: [nature] forest.png (Metadata: Yes)
-   🎉 Success! Scanned 2 images and wrote data to public/images-data.json
+   请输入文件夹路径: 
    ```
-4. 扫描完成后，刷新网站页面即可看到最新的图片和参数。
+   此时，您可以**直接将想要展示的 ComfyUI 图像输出文件夹拖入到该窗口中**（或者手动复制输入文件夹的绝对路径，例如 `D:\ComfyUI\output`），然后按下**回车键**。
+3. **软链接绑定**：扫描程序会自动在项目目录下的 `public/` 内创建一个名为 `images` 的软链接（Junction），直接指向您的目标文件夹。**这个过程不需要占用任何额外的磁盘空间**。
+4. **保存配置**：路径会被自动记录在项目根目录下的 `directory-config.json` 配置文件中。
+
+### 2.2 日常运行：自动加载与一键更新
+- 绑定完成后，以后每次需要更新画廊，您只需要**直接双击运行** `bin/scanner-win.exe`（或运行 `bin/scanner-macos`），程序会自动加载上一次的目录，并在数秒内完成图片和元数据解析，解析完成后会提示“按下回车键即可退出”。
+
+### 2.3 如何更换绑定的图片目录？
+如果您希望把画廊切换到另一个文件夹，有以下两种方式：
+- **方式 A (推荐)**：打开命令行窗口，加上参数运行程序：
+  ```bash
+  # 使用 Node 运行
+  node scan-images.js --switch
+  
+  # 或者运行二进制程序时加参数
+  bin/scanner-win.exe --switch
+  ```
+- **方式 B (最简单)**：直接删除项目根目录下的 `directory-config.json` 配置文件，下一次启动扫描程序时，就会重新提示您输入/拖入新的路径。
 
 ---
 

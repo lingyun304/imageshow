@@ -1,13 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
-import { fileURLToPath } from 'url';
+import readline from 'readline';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const IMAGES_DIR = path.join(__dirname, 'public', 'images');
-const OUTPUT_FILE = path.join(__dirname, 'public', 'images-data.json');
+const workingDir = process.cwd();
+const IMAGES_DIR = path.join(workingDir, 'public', 'images');
+const OUTPUT_FILE = path.join(workingDir, 'public', 'images-data.json');
 
 // Parse PNG metadata (tEXt and iTXt chunks)
 function parsePngMetadata(filePath) {
@@ -302,13 +300,10 @@ function formatBytes(bytes) {
 
 // Scans local images and updates the images-data.json file
 function scan() {
-  console.log('🔍 Scanning local folders under public/images...');
+  console.log('\n🔍 开始扫描本地图片及元数据...');
   
   if (!fs.existsSync(IMAGES_DIR)) {
-    console.error(`❌ Directory not found: ${IMAGES_DIR}`);
-    console.log('Creating folders...');
-    fs.mkdirSync(IMAGES_DIR, { recursive: true });
-    fs.writeFileSync(OUTPUT_FILE, JSON.stringify([], null, 2));
+    console.error(`❌ 目录未找到: ${IMAGES_DIR}`);
     return;
   }
   
@@ -330,9 +325,7 @@ function scan() {
       const filePath = path.join(categoryPath, file);
       const stat = fs.statSync(filePath);
       
-      // Category is folder name
       const category = folder;
-      // Relative URL for frontend client
       const imagePath = `/images/${folder}/${file}`;
       
       let rawMetadata = null;
@@ -342,7 +335,7 @@ function scan() {
         rawMetadata = parseWebpMetadata(filePath);
       }
       
-      // Look for sidecar JSON file if png/webp metadata is empty, or as a general fallback/companion option
+      // Look for sidecar JSON
       const jsonFile = path.join(categoryPath, path.basename(file, ext) + '.json');
       if (fs.existsSync(jsonFile)) {
         try {
@@ -351,7 +344,6 @@ function scan() {
           if (jsonContent.prompt) {
             rawMetadata.prompt = jsonContent.prompt;
           } else {
-            // If the JSON is directly the prompt graph
             rawMetadata.prompt = jsonContent;
           }
           if (jsonContent.workflow) {
@@ -375,12 +367,146 @@ function scan() {
         metadata: extractedParams
       });
       
-      console.log(`✅ Scanned: [${category}] ${file} (Metadata: ${extractedParams.hasMetadata ? 'Yes' : 'No'})`);
+      console.log(`✅ 已扫描: [${category}] ${file} (含元数据: ${extractedParams.hasMetadata ? '是' : '否'})`);
     });
   });
   
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(images, null, 2));
-  console.log(`\n🎉 Success! Scanned ${images.length} images and wrote data to ${OUTPUT_FILE}`);
+  console.log(`\n🎉 扫描成功！共扫描了 ${images.length} 张图片，已更新前端数据库：${OUTPUT_FILE}`);
 }
 
-scan();
+// Create directory link helper
+function setupSymlink(targetPath) {
+  const publicDir = path.join(workingDir, 'public');
+  const linkPath = path.join(publicDir, 'images');
+  
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+  }
+  
+  if (fs.existsSync(linkPath)) {
+    try {
+      const stats = fs.lstatSync(linkPath);
+      if (stats.isSymbolicLink() || stats.isDirectory()) {
+        fs.rmSync(linkPath, { recursive: true, force: true });
+      } else {
+        fs.unlinkSync(linkPath);
+      }
+    } catch (e) {
+      console.warn('⚠️ 警告: 移除原有 images 软链接失败，尝试直接删除...');
+      try {
+        fs.rmSync(linkPath, { recursive: true, force: true });
+      } catch (err) {
+        console.error('❌ 错误: 无法移除 public/images 文件夹。请手动删除项目 public 文件夹下的 images 目录，然后再试。');
+        throw err;
+      }
+    }
+  }
+  
+  // Create link
+  const type = process.platform === 'win32' ? 'junction' : 'dir';
+  console.log(`🔗 正在建立目录链接: public/images -> ${targetPath}`);
+  fs.symlinkSync(targetPath, linkPath, type);
+  console.log('✅ 目录链接建立成功！');
+}
+
+// CLI prompt helper
+function askQuestion(query) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  return new Promise((resolve) => rl.question(query, (ans) => {
+    rl.close();
+    resolve(ans);
+  }));
+}
+
+// Main sequence
+async function main() {
+  try {
+    const CONFIG_FILE = path.join(workingDir, 'directory-config.json');
+    let targetPath = null;
+    let needPrompt = false;
+    
+    const args = process.argv.slice(2);
+    const isSwitch = args.includes('--switch') || args.includes('-s');
+    
+    if (fs.existsSync(CONFIG_FILE) && !isSwitch) {
+      try {
+        const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+        if (config.targetPath && fs.existsSync(config.targetPath)) {
+          targetPath = config.targetPath;
+          console.log(`📁 载入已配置的图片目录: ${targetPath}`);
+        } else {
+          console.log('⚠️ 配置文件中指向的目录已不存在。');
+          needPrompt = true;
+        }
+      } catch (e) {
+        needPrompt = true;
+      }
+    } else {
+      needPrompt = true;
+    }
+    
+    if (needPrompt) {
+      console.log('\n==================================================');
+      console.log('👉 PromptGallery 图片目录设置');
+      console.log('==================================================');
+      if (isSwitch) {
+        console.log('🔄 检测到 --switch 参数，正在切换加载的图片目录。');
+      } else {
+        console.log('💡 首次运行或配置文件不存在，请指定您的 AI 图片目录。');
+      }
+      console.log('您可以输入绝对路径，或直接把文件夹拖入本终端窗口：\n');
+      
+      let validPath = false;
+      while (!validPath) {
+        const answer = await askQuestion('请输入文件夹路径: ');
+        const cleanPath = answer.trim().replace(/^["']|["']$/g, '');
+        
+        if (!cleanPath) {
+          console.log('❌ 路径不能为空，请重新输入。');
+          continue;
+        }
+        
+        if (fs.existsSync(cleanPath)) {
+          const stats = fs.statSync(cleanPath);
+          if (stats.isDirectory()) {
+            targetPath = cleanPath;
+            validPath = true;
+          } else {
+            console.log('❌ 该路径不是一个有效的文件夹，请重新输入。');
+          }
+        } else {
+          console.log(`❌ 路径不存在: "${cleanPath}"，请重新输入。`);
+        }
+      }
+      
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify({ targetPath }, null, 2));
+      console.log(`💾 目录已成功保存至 directory-config.json`);
+      
+      setupSymlink(targetPath);
+    } else {
+      // Double check symlink is correct
+      const linkPath = path.join(workingDir, 'public', 'images');
+      if (!fs.existsSync(linkPath)) {
+        setupSymlink(targetPath);
+      }
+    }
+    
+    // Run scan
+    scan();
+    
+  } catch (error) {
+    console.error('❌ 执行失败:', error);
+  } finally {
+    // Hold terminal open if in packaged binary format
+    if (process.pkg || process.argv.includes('--hold')) {
+      console.log('\n==================================================');
+      await askQuestion('🎉 运行结束！按下 [回车键] 即可退出窗口...');
+    }
+  }
+}
+
+main();
