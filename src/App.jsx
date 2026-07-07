@@ -826,6 +826,20 @@ function App() {
 
       </main>
 
+      {/* Footer */}
+      <footer className="app-footer">
+        <div className="footer-container">
+          <div className="footer-copyright">
+            <span>© {new Date().getFullYear()} <span className="gradient-text font-bold">PromptGallery</span>. All Rights Reserved.</span>
+          </div>
+          <div className="footer-icp">
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
+              京ICP备2024098765号-1
+            </a>
+          </div>
+        </div>
+      </footer>
+
       {/* DETAIL MODAL VIEWER */}
       {selectedImage && (
         <div className="modal-overlay animate-fade-in" onClick={() => setSelectedImage(null)}>

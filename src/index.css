@@ -949,4 +949,62 @@ html.dynamic-anime .category-tab-btn.active {
   to { transform: scale(1); opacity: 1; }
 }
 
+/* ==========================================
+   Footer Styles
+   ========================================== */
+
+.app-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
+  padding: 1.5rem 2rem;
+  background: var(--card-bg, rgba(20, 20, 25, 0.3));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-copyright {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.footer-copyright .gradient-text {
+  font-weight: 700;
+}
+
+.footer-icp {
+  font-size: 0.85rem;
+}
+
+.footer-icp a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.footer-icp a:hover {
+  color: var(--primary);
+  text-shadow: 0 0 8px rgba(var(--primary-rgb, 99, 102, 241), 0.3);
+}
+
+@media (max-width: 640px) {
+  .footer-container {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+
 
