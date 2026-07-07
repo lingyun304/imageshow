@@ -755,30 +755,47 @@ function App() {
 
                 <section id="use">
                   <h2>3. 使用说明</h2>
-                  <div className="code-box">
-                    <h3>第一步：放置图片</h3>
-                    <p>在 <code>/public/images/</code> 下按照你想要的分类建立文件夹，将生成的 PNG/JPG/WebP 图片放进去，如：</p>
-                    <pre>
-{`public/images/
-├── cyberpunk/
-│   ├── image_01.png
-│   └── street.jpg
-└── nature/
-    └── forest.webp`}
-                    </pre>
+                  <div className="guide-methods-container">
+                    
+                    <div className="guide-method-card glass-panel">
+                      <div className="method-badge gradient-bg">最简单 (免 Node)</div>
+                      <h3>📁 方法一：网页前端直连切换 (推荐)</h3>
+                      <p>直接在网页上操作，无需运行任何脚本或可执行文件：</p>
+                      <ol>
+                        <li>点击顶部导航栏的 <strong>“选择本地目录”</strong> 按钮。</li>
+                        <li>在浏览器弹出的文件选择器中，选择您的 ComfyUI <code>output</code> 文件夹（或任何包含分类子目录的图片文件夹）。</li>
+                        <li>在浏览器上方弹出权限询问时，点击 <strong>“允许访问”</strong> 授予只读权限。</li>
+                        <li>网页端程序会直接在本地解压缩 PNG/WebP 图片并提取所有提示词参数，极速载入浏览！</li>
+                      </ol>
+                      <p className="note-text"><em>注：因安全限制，刷新页面后需重新选择目录授权。若想永久展示，请使用方法二。</em></p>
+                    </div>
 
-                    <h3 style={{ marginTop: '1.5rem' }}>第二步：运行扫描脚本</h3>
-                    <p>打开终端，在项目根目录下执行以下命令：</p>
-                    <pre>
-                      <code>npm run scan</code>
-                    </pre>
-                    <p className="note-text"><em>提示：每次往文件夹添加或删除图片，均需运行一次扫描脚本以更新网站数据库。</em></p>
+                    <div className="guide-method-card glass-panel">
+                      <div className="method-badge secondary">双击运行 (便携可执行程序)</div>
+                      <h3>⚡ 方法二：双击本地可执行程序</h3>
+                      <p>项目根目录下内置了打包好的无 Node.js 运行时依赖包：</p>
+                      <ul>
+                        <li><strong>Windows:</strong> 双击项目根目录下 <code>bin/scanner-win.exe</code> 运行。</li>
+                        <li><strong>macOS:</strong> 在终端执行 <code>bin/scanner-macos</code>（首次如遇权限拦截需在系统设置中允许，或 <code>chmod +x</code> 授权）。</li>
+                      </ul>
+                      <ol>
+                        <li>首次运行：在弹出的黑框控制台中，<strong>直接拖入您的图片文件夹</strong>并回车，程序会自动为您创建无占用的软链接绑定。</li>
+                        <li>更新目录：未来当您增删图片时，<strong>只需再次双击它</strong>，数秒内即可自动在后台同步完所有元数据。</li>
+                        <li>若要彻底更换绑定目录，可加上参数 <code>--switch</code> 启动，或直接删除项目根目录的 <code>directory-config.json</code>。</li>
+                      </ol>
+                    </div>
 
-                    <h3 style={{ marginTop: '1.5rem' }}>第三步：启动预览网站</h3>
-                    <pre>
-                      <code>npm run dev</code>
-                    </pre>
-                    <p>打开控制台输出的本地链接（通常为 <code>http://localhost:5173</code>）即可查看网站。</p>
+                    <div className="guide-method-card glass-panel">
+                      <div className="method-badge outline">开发者模式</div>
+                      <h3>🛠️ 方法三：常规 Node.js 命令扫描</h3>
+                      <p>适合前端开发与部署流程：</p>
+                      <ol>
+                        <li>将您的 ComfyUI 外部图片文件夹挂载到 <code>/public/images/</code> (支持直接在 images 目录下新建子文件夹来分类)。</li>
+                        <li>在项目根目录下执行命令行：<code>npm run scan</code>。</li>
+                        <li>扫描完成后，执行 <code>npm run dev</code> 启动本地预览，或执行 <code>npm run build</code> 构建平铺静态包。</li>
+                      </ol>
+                    </div>
+
                   </div>
                 </section>
 
@@ -797,25 +814,27 @@ function App() {
                 <hr />
 
                 <section id="deploy">
-                  <h2>5. 静态部署指南</h2>
-                  <p>由于本项目不需要后端，可以通过以下几种方式部署并分享你的画廊：</p>
+                  <h2>5. 静态部署与平铺包分发指南</h2>
+                  <p>由于本项目为完全零后端架构，极易部署和打包分享：</p>
                   
                   <div className="deploy-method">
-                    <h3>🚀 Vercel 部署 (推荐)</h3>
+                    <h3>📦 1. 离线平铺分发包 (适合免 Node 发送给他人使用)</h3>
                     <ol>
-                      <li>将项目上传至 GitHub。</li>
-                      <li>在 Vercel 导入你的 GitHub 仓库。</li>
-                      <li>构建设置选择默认（Build Command: <code>npm run build</code>, Output Directory: <code>dist</code>）。</li>
-                      <li>Vercel 会自动编译 React，你的画廊即刻上线！</li>
+                      <li>在开发根目录下执行打包命令：<code>npm run build</code></li>
+                      <li>编译产物保存在 <code>dist/</code> 目录下。</li>
+                      <li><strong>打包免 Node 运行环境</strong>：将项目中的 <code>bin/scanner-win.exe</code> 复制到 <code>dist/</code> 文件夹下，然后将整个 <code>dist/</code> 文件夹打包发送给他人。</li>
+                      <li><strong>使用方法</strong>：他人解压后，双击 <code>dist/</code> 中的 <code>scanner-win.exe</code>，程序会自动检测到处于打包平铺环境，并在 <code>dist/images</code> 创建软链接并实时写出 <code>dist/images-data.json</code>。使用 Live Server 容器或静态 web 服务器启动即可脱离 Node 环境使用！</li>
                     </ol>
                   </div>
 
-                  <div className="deploy-method">
-                    <h3>📦 静态打包 (适合本地离线打包或 Nginx)</h3>
+                  <div className="deploy-method" style={{ marginTop: '1.5rem' }}>
+                    <h3>🚀 2. Vercel / Netlify 线上部署</h3>
                     <ol>
-                      <li>在终端执行：<code>npm run build</code></li>
-                      <li>打包生成的文件将保存在 <code>/dist/</code> 目录下。</li>
-                      <li>你可以将 <code>/dist/</code> 目录下的所有文件上传到你自己的 Nginx / Apache 服务器，或者打包发给朋友直接双击 index.html (需通过 Live Server 容器) 预览。</li>
+                      <li>将您的 PromptGallery 仓库推送至您的 GitHub 账号下。</li>
+                      <li>在 Vercel 或 Netlify 仪表盘中，点击“新建项目”并选择您的 GitHub 仓库。</li>
+                      <li>构建指令（Build Command）填写：<code>npm run build</code>。</li>
+                      <li>打包目录（Output Directory）填写：<code>dist</code>。</li>
+                      <li>点击部署，您的 AI 提示词分类画廊就会立刻全球上线！</li>
                     </ol>
                   </div>
                 </section>
