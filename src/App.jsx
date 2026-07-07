@@ -10,6 +10,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Folder, 
+  FolderOpen,
   Layers, 
   Info, 
   Terminal, 
@@ -26,6 +27,7 @@ import {
   Zap
 } from 'lucide-react';
 import './App.css';
+import { scanLocalDirectory } from './utils/metadataParser';
 
 function App() {
   // Theme state
@@ -46,6 +48,11 @@ function App() {
   // Image data state
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Local directory import state
+  const [isLocalImport, setIsLocalImport] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState('');
   
   // Gallery filters and search
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -81,6 +88,68 @@ function App() {
         setLoading(false);
       });
   }, []);
+
+  // Handler for directory import
+  const handleImportDirectory = async () => {
+    try {
+      if (!window.showDirectoryPicker) {
+        alert('您的浏览器不支持 File System Access API。请使用最新版的 Chrome, Edge 或 Safari 浏览器访问。');
+        return;
+      }
+      
+      const dirHandle = await window.showDirectoryPicker();
+      setImporting(true);
+      setImportStatus('正在扫描文件夹结构...');
+      
+      const localImages = await scanLocalDirectory(dirHandle, (status) => {
+        setImportStatus(status);
+      });
+      
+      if (localImages.length === 0) {
+        showToast('在该目录下未找到任何支持的图片（PNG/WebP/JPG/JPEG）', 'error');
+        setImporting(false);
+        return;
+      }
+      
+      setImages(localImages);
+      setIsLocalImport(true);
+      setSelectedCategory('all');
+      setActiveTab('gallery'); // 自动跳转至画廊页
+      showToast(`🎉 成功导入并解析了 ${localImages.length} 张本地图片！`);
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error('Directory import error:', e);
+        showToast('导入本地文件夹失败，请重试', 'error');
+      }
+    } finally {
+      setImporting(false);
+      setImportStatus('');
+    }
+  };
+
+  // Handler to reload scanned server database
+  const handleLoadScannedData = () => {
+    setLoading(true);
+    fetch('/images-data.json')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Image metadata JSON not found. Please run the scanner.');
+        }
+        return res.json();
+      })
+      .then(data => {
+        setImages(data);
+        setIsLocalImport(false);
+        setSelectedCategory('all');
+        setLoading(false);
+        showToast('已成功切换回默认的已扫描数据库！');
+      })
+      .catch(err => {
+        console.error('Error loading image metadata:', err);
+        setLoading(false);
+        showToast('加载默认数据库失败，请运行 scan 脚本进行同步', 'error');
+      });
+  };
 
   // Show Toast Helper
   const showToast = (message, field = '') => {
@@ -223,6 +292,23 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Full-screen Loading Overlay for Import */}
+      {importing && (
+        <div className="import-loading-overlay animate-fade-in">
+          <div className="import-loading-content">
+            <div className="import-spinner-container">
+              <div className="import-spinner"></div>
+              <FolderOpen size={32} className="import-spinner-icon" />
+            </div>
+            <h3>正在读取本地文件夹</h3>
+            <p className="import-status-text">{importStatus}</p>
+            <div className="import-warning-tip">
+              提示：首次读取大文件夹可能需要数秒时间，请在浏览器弹出权限请求时点击“允许访问”。
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {toast.show && (
         <div className="toast glass-panel animate-fade-in-up">
@@ -268,6 +354,30 @@ function App() {
                 </button>
               </li>
             </ul>
+
+            {/* Directory Switcher Controls */}
+            <div className="directory-actions">
+              {isLocalImport ? (
+                <button 
+                  className="nav-action-btn load-default-btn"
+                  onClick={handleLoadScannedData}
+                  title="切换回后端扫描的图片数据库"
+                >
+                  <Database size={14} />
+                  <span>载入默认库</span>
+                </button>
+              ) : (
+                <button 
+                  className="nav-action-btn import-local-btn"
+                  onClick={handleImportDirectory}
+                  disabled={importing}
+                  title="导入并展示本地其他文件夹"
+                >
+                  <FolderOpen size={14} />
+                  <span>{importing ? '解析中...' : '选择本地目录'}</span>
+                </button>
+              )}
+            </div>
 
             {/* Theme selector widget */}
             <div className="theme-pill-selector">
