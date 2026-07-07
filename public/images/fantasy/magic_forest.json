@@ -1,0 +1,129 @@
+{
+  "prompt": {
+    "3": {
+      "inputs": {
+        "seed": 482019483019,
+        "steps": 28,
+        "cfg": 6,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "exponential",
+        "denoise": 1,
+        "model": [
+          "4",
+          0
+        ],
+        "positive": [
+          "6",
+          0
+        ],
+        "negative": [
+          "7",
+          0
+        ],
+        "latent_image": [
+          "5",
+          0
+        ]
+      },
+      "class_type": "KSampler"
+    },
+    "4": {
+      "inputs": {
+        "ckpt_name": "dreamshaper_v8.safetensors"
+      },
+      "class_type": "CheckpointLoaderSimple"
+    },
+    "5": {
+      "inputs": {
+        "width": 1024,
+        "height": 1024,
+        "batch_size": 1
+      },
+      "class_type": "EmptyLatentImage"
+    },
+    "6": {
+      "inputs": {
+        "text": "magical hidden forest sanctuary, glowing mushrooms, crystal clear river, mystical glowing tree of life in the center, ethereal fairy lights, ultra-detailed fantasy art, enchanting vibe",
+        "clip": [
+          "4",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "7": {
+      "inputs": {
+        "text": "modern buildings, concrete, cars, low quality, blurry, human, ugly, bad drawing, deformed, worst quality, monochrome",
+        "clip": [
+          "4",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "8": {
+      "inputs": {
+        "samples": [
+          "3",
+          0
+        ],
+        "vae": [
+          "4",
+          2
+        ]
+      },
+      "class_type": "VAEDecode"
+    },
+    "9": {
+      "inputs": {
+        "filename_prefix": "ComfyUI",
+        "images": [
+          "8",
+          0
+        ]
+      },
+      "class_type": "SaveImage"
+    }
+  },
+  "workflow": {
+    "last_node_id": 9,
+    "last_link_id": 9,
+    "nodes": [
+      {
+        "id": 3,
+        "type": "KSampler",
+        "properties": {}
+      },
+      {
+        "id": 4,
+        "type": "CheckpointLoaderSimple",
+        "properties": {}
+      },
+      {
+        "id": 5,
+        "type": "EmptyLatentImage",
+        "properties": {}
+      },
+      {
+        "id": 6,
+        "type": "CLIPTextEncode",
+        "properties": {}
+      },
+      {
+        "id": 7,
+        "type": "CLIPTextEncode",
+        "properties": {}
+      },
+      {
+        "id": 8,
+        "type": "VAEDecode",
+        "properties": {}
+      },
+      {
+        "id": 9,
+        "type": "SaveImage",
+        "properties": {}
+      }
+    ]
+  }
+}
