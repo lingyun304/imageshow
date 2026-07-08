@@ -27,7 +27,8 @@ imageshow/
 ├── doc/                        # 项目说明文档
 │   ├── requirements.md         # 需求分析与 PRD (已更新三套主题定义)
 │   ├── user_guide.md           # 用户使用与操作指南 (已更新主题切换操作)
-│   └── deployment.md           # 静态构建与多平台部署方案
+│   ├── deployment.md           # 静态构建与多平台部署方案
+│   └── changelog.md            # 项目变更记录与升级历史
 ├── public/
 │   ├── media/                  # 本地分类媒体目录（按分类新建子文件夹）
 │   │   ├── cyberpunk/
