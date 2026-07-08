@@ -324,7 +324,7 @@ function App() {
         <div className="navbar-container">
           <a href="#" className="nav-logo" onClick={() => { setActiveTab('home'); setSelectedCategory('all'); }}>
             <span className="logo-icon gradient-bg"><Sparkles size={20} color="#fff" /></span>
-            <span className="nav-logo-text gradient-text">PromptGallery</span>
+            <span className="nav-logo-text gradient-text">PromptMedia</span>
           </a>
           
           <div className="navbar-actions">
@@ -342,7 +342,7 @@ function App() {
                   className={`nav-link-btn nav-link ${activeTab === 'gallery' ? 'active' : ''}`}
                   onClick={() => { setActiveTab('gallery'); setSelectedCategory('all'); }}
                 >
-                  分类画廊
+                  分类媒体库
                 </button>
               </li>
               <li>
@@ -432,12 +432,12 @@ function App() {
                   解密 AI 创作的 <span className="gradient-text">提示词密码</span>
                 </h1>
                 <p className="hero-description">
-                  PromptGallery 是一款专为 ComfyUI 与 AI 艺术创作者打造的本地图像分类展示网站。
-                  无需繁琐的后端部署，通过扫描本地文件夹即可瞬间提取 PNG/WebP 图像元数据中的生成参数。
+                  PromptMedia 是一款专为 ComfyUI 与 AI 艺术创作者打造的本地多媒体分类展示网站。
+                  无需繁琐的后端部署，通过扫描本地文件夹即可瞬间提取 PNG/WebP 图像元数据中的生成参数，并支持音视频文件预览。
                 </p>
                 <div className="hero-buttons">
                   <button className="btn-primary" onClick={() => setActiveTab('gallery')}>
-                    浏览分类画廊 <ArrowRight size={18} />
+                    浏览分类媒体库 <ArrowRight size={18} />
                   </button>
                   <button className="btn-secondary" onClick={() => setActiveTab('guide')}>
                     查看部署使用说明
@@ -871,11 +871,11 @@ function App() {
                   <div className="deploy-method" style={{ marginTop: '1.5rem' }}>
                     <h3>🚀 2. Vercel / Netlify 线上部署</h3>
                     <ol>
-                      <li>将您的 PromptGallery 仓库推送至您的 GitHub 账号下。</li>
+                      <li>将您的 PromptMedia 仓库推送至您的 GitHub 账号下。</li>
                       <li>在 Vercel 或 Netlify 仪表盘中，点击“新建项目”并选择您的 GitHub 仓库。</li>
                       <li>构建指令（Build Command）填写：<code>npm run build</code>。</li>
                       <li>打包目录（Output Directory）填写：<code>dist</code>。</li>
-                      <li>点击部署，您的 AI 提示词分类画廊就会立刻全球上线！</li>
+                      <li>点击部署，您的 AI 提示词分类媒体库就会立刻全球上线！</li>
                     </ol>
                   </div>
                 </section>
@@ -890,7 +890,7 @@ function App() {
       <footer className="app-footer">
         <div className="footer-container">
           <div className="footer-copyright" style={{ width: '100%', textAlign: 'center' }}>
-            <span>© {new Date().getFullYear()} <span className="gradient-text font-bold">PromptGallery</span>. All Rights Reserved.</span>
+            <span>© {new Date().getFullYear()} <span className="gradient-text font-bold">PromptMedia</span>. All Rights Reserved.</span>
           </div>
         </div>
       </footer>

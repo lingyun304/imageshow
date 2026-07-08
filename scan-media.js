@@ -471,7 +471,7 @@ async function main() {
     
     if (needPrompt) {
       console.log('\n==================================================');
-      console.log('👉 PromptGallery 媒体目录设置');
+      console.log('👉 PromptMedia 媒体目录设置');
       console.log('==================================================');
       if (isSwitch) {
         console.log('🔄 检测到 --switch 参数，正在切换加载的媒体目录。');
