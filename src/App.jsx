@@ -499,7 +499,8 @@ function App() {
                 ) : (
                   categories.filter(cat => cat !== 'all').map(cat => {
                     const catImages = images.filter(img => img.category === cat);
-                    const coverImg = catImages[0]?.path || '';
+                    const coverImgObj = catImages.find(img => img.type === 'image');
+                    const coverImg = coverImgObj?.path || '';
                     return (
                       <div 
                         key={cat} 
@@ -508,9 +509,9 @@ function App() {
                           setSelectedCategory(cat);
                           setActiveTab('gallery');
                         }}
-                        style={{
-                          backgroundImage: coverImg ? `linear-gradient(to bottom, rgba(10, 15, 30, 0.4), rgba(7, 9, 14, 0.95)), url(${coverImg})` : 'none'
-                        }}
+                        style={coverImg ? {
+                          backgroundImage: `linear-gradient(to bottom, rgba(10, 15, 30, 0.4), rgba(7, 9, 14, 0.95)), url('${coverImg.replace(/'/g, "\\'")}')`
+                        } : {}}
                       >
                         <div className="cat-preview-content">
                           <Folder className="cat-icon" size={24} />
