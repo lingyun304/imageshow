@@ -70,12 +70,12 @@ function App() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [copiedField, setCopiedField] = useState('');
 
-  // Fetch scanned image data
+  // Fetch scanned media data
   useEffect(() => {
-    fetch('/images-data.json')
+    fetch('/media-data.json')
       .then(res => {
         if (!res.ok) {
-          throw new Error('Image metadata JSON not found. Please run the scanner.');
+          throw new Error('Media metadata JSON not found. Please run the scanner.');
         }
         return res.json();
       })
@@ -106,7 +106,7 @@ function App() {
       });
       
       if (localImages.length === 0) {
-        showToast('在该目录下未找到任何支持的图片（PNG/WebP/JPG/JPEG）', 'error');
+        showToast('在该目录下未找到任何支持的媒体文件（图片/音视频）', 'error');
         setImporting(false);
         return;
       }
@@ -115,7 +115,7 @@ function App() {
       setIsLocalImport(true);
       setSelectedCategory('all');
       setActiveTab('gallery'); // 自动跳转至画廊页
-      showToast(`🎉 成功导入并解析了 ${localImages.length} 张本地图片！`);
+      showToast(`🎉 成功导入并解析了 ${localImages.length} 个本地媒体文件！`);
     } catch (e) {
       if (e.name !== 'AbortError') {
         console.error('Directory import error:', e);
@@ -130,10 +130,10 @@ function App() {
   // Handler to reload scanned server database
   const handleLoadScannedData = () => {
     setLoading(true);
-    fetch('/images-data.json')
+    fetch('/media-data.json')
       .then(res => {
         if (!res.ok) {
-          throw new Error('Image metadata JSON not found. Please run the scanner.');
+          throw new Error('Media metadata JSON not found. Please run the scanner.');
         }
         return res.json();
       })
@@ -361,7 +361,7 @@ function App() {
                 <button 
                   className="nav-action-btn load-default-btn"
                   onClick={handleLoadScannedData}
-                  title="切换回后端扫描的图片数据库"
+                  title="切换回后端扫描的媒体数据库"
                 >
                   <Database size={14} />
                   <span>载入默认库</span>
@@ -452,14 +452,14 @@ function App() {
                 <div className="stat-icon-wrapper purple"><Database size={24} /></div>
                 <div className="stat-info">
                   <div className="stat-num">{loading ? '...' : totalImages}</div>
-                  <div className="stat-label">已扫描本地图像</div>
+                  <div className="stat-label">已扫描本地媒体</div>
                 </div>
               </div>
               <div className="stat-card glass-panel">
                 <div className="stat-icon-wrapper cyan"><Layers size={24} /></div>
                 <div className="stat-info">
                   <div className="stat-num">{loading ? '...' : totalCategories}</div>
-                  <div className="stat-label">图片分类目录</div>
+                  <div className="stat-label">媒体分类目录</div>
                 </div>
               </div>
               <div className="stat-card glass-panel">
@@ -477,22 +477,22 @@ function App() {
               <div className="info-grid">
                 <div className="info-card glass-panel">
                   <h3>📂 自动分类展示</h3>
-                  <p>只需按照分类创建本地文件夹（例如 nature, portraits），并将生成的图片放入，系统会自动将文件夹名称映射为网站的分类标签，结构清晰，完全脱机运行。</p>
+                  <p>只需按照分类创建本地文件夹（例如 nature, portraits），并将生成的媒体文件放入，系统会自动将文件夹名称映射为网站的分类标签，结构清晰，完全脱机运行。</p>
                 </div>
                 <div className="info-card glass-panel">
                   <h3>🧠 ComfyUI 元数据提取</h3>
-                  <p>原生支持 PNG 与 WebP 文件块分析，直接提取并还原 ComfyUI 生成图片时嵌入的完整提示词、负向提示词、Seed、Steps、采样器、大模型等参数。</p>
+                  <p>原生支持 PNG 与 WebP 文件块分析，直接提取并还原 ComfyUI 生成媒体时嵌入的完整提示词、负向提示词、Seed、Steps、采样器、大模型等参数。</p>
                 </div>
                 <div className="info-card glass-panel">
                   <h3>🔗 零后端静态体验</h3>
-                  <p>通过极致优化的打包逻辑，整个网站均为前端静态页面。仅通过一个本地 Node 扫描脚本即可实时同步最新图片并生成前端数据库，速度飞快，部署极简。</p>
+                  <p>通过极致优化的打包逻辑，整个网站均为前端静态页面。仅通过一个本地 Node 扫描脚本即可实时同步最新媒体并生成前端数据库，速度飞快，部署极简。</p>
                 </div>
               </div>
             </section>
 
             {/* Category Quick Preview */}
             <section className="category-preview-section">
-              <h2 className="section-title">图片类别预览</h2>
+              <h2 className="section-title">媒体类别预览</h2>
               <div className="category-grid">
                 {loading ? (
                   <div className="loading-spinner">加载分类中...</div>
@@ -515,7 +515,7 @@ function App() {
                         <div className="cat-preview-content">
                           <Folder className="cat-icon" size={24} />
                           <h3>{cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>
-                          <span className="cat-count">{catImages.length} 张图片</span>
+                          <span className="cat-count">{catImages.length} 个媒体</span>
                         </div>
                       </div>
                     );
@@ -631,7 +631,7 @@ function App() {
                     onClick={() => setSelectedCategory(cat)}
                     className={`category-tab-btn ${selectedCategory === cat ? 'active' : ''}`}
                   >
-                    {cat === 'all' ? '全部图片' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    {cat === 'all' ? '全部媒体' : cat.charAt(0).toUpperCase() + cat.slice(1)}
                     <span className="tab-count-badge">
                       {cat === 'all' 
                         ? images.length 
@@ -647,13 +647,13 @@ function App() {
             {loading ? (
               <div className="gallery-loading-placeholder">
                 <div className="loading-spinner"></div>
-                <p>扫描并提取本地图片元数据中，请稍候...</p>
+                <p>扫描并提取本地媒体元数据中，请稍候...</p>
               </div>
             ) : filteredImages.length === 0 ? (
               <div className="gallery-empty-state glass-panel">
                 <ImageIcon size={48} className="empty-icon" />
-                <h3>没有找到匹配的图片</h3>
-                <p>尝试清除搜索词或更改筛选条件，或者放入图片运行扫描脚本。</p>
+                <h3>没有找到匹配的媒体</h3>
+                <p>尝试清除搜索词或更改筛选条件，或者放入媒体文件运行扫描脚本。</p>
                 <button 
                   className="btn-secondary"
                   onClick={() => {
@@ -675,14 +675,54 @@ function App() {
                     className="masonry-item glass-card"
                     onClick={() => setSelectedImage(img)}
                   >
-                    <div className="image-card-img-wrapper">
-                      <img src={img.path} alt={img.filename} loading="lazy" />
+                    <div className={`image-card-img-wrapper ${img.type || 'image'}-wrapper`}>
+                      {img.type === 'video' ? (
+                        <div className="video-container">
+                          <video 
+                            src={img.path} 
+                            preload="metadata"
+                            muted 
+                            loop 
+                            playsInline 
+                            className="grid-video"
+                            onMouseEnter={(e) => {
+                              e.target.play().catch(err => console.log("Video play interrupted", err));
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.pause();
+                            }}
+                          />
+                          <div className="media-badge-overlay video">
+                            <span className="badge-icon">▶</span>
+                            <span>视频</span>
+                          </div>
+                        </div>
+                      ) : img.type === 'audio' ? (
+                        <div className="grid-audio-placeholder">
+                          <div className="audio-wave-animation">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                          <div className="audio-icon-wrapper">
+                            <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="audio-icon"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                          </div>
+                          <div className="media-badge-overlay audio">
+                            <span className="badge-icon">♫</span>
+                            <span>音频</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <img src={img.path} alt={img.filename} loading="lazy" />
+                      )}
                       <div className="card-overlay">
                         {img.metadata?.hasMetadata && (
                           <span className="overlay-badge glass-panel"><Sparkles size={12} /> ComfyUI</span>
                         )}
                         <button className="card-view-btn btn-primary">
-                          查看生成参数
+                          {img.type === 'video' || img.type === 'audio' ? '播放与参数' : '查看生成参数'}
                         </button>
                       </div>
                     </div>
@@ -727,10 +767,10 @@ function App() {
               <div className="guide-content-wrapper glass-panel">
                 <section id="req">
                   <h2>1. 系统需求与架构</h2>
-                  <p>本网站为 <strong>全静态纯前端展示页面</strong>，无需任何数据库或动态后端服务。所有的图片及其元数据在部署/打包时被一次性解析并生成前端索引文件。</p>
+                  <p>本网站为 <strong>全静态纯前端展示页面</strong>，无需任何数据库或动态后端服务。所有的媒体及其元数据在部署/打包时被一次性解析并生成前端索引文件。</p>
                   <ul>
                     <li><strong>前端框架:</strong> React 19, Vite 8, Vanilla CSS</li>
-                    <li><strong>运行环境:</strong> 浏览器支持现代 HTML5, Node.js v16+ (仅用于扫描本地图片)</li>
+                    <li><strong>运行环境:</strong> 浏览器支持现代 HTML5, Node.js v16+ (仅用于扫描本地媒体)</li>
                     <li><strong>无后端优势:</strong> 零服务器压力，可直接托管至 GitHub Pages、Gitee Pages、Vercel 或本地直接浏览器双击预览。</li>
                   </ul>
                 </section>
@@ -742,11 +782,11 @@ function App() {
                   <div className="principle-box">
                     <p>网站数据流如下：</p>
                     <ol>
-                      <li>用户将 ComfyUI 生成的图片分类存放在 <code>/public/images/[分类目录]/</code>。</li>
+                      <li>用户将 ComfyUI 生成的媒体分类存放在 <code>/public/media/[分类目录]/</code>。</li>
                       <li>在根目录执行 <code>npm run scan</code>。</li>
-                      <li>Node 脚本 <code>scan-images.js</code> 会读取所有子文件夹，解析 PNG Chunks 中的 <code>tEXt/iTXt</code> 字段，或 WebP 的 <code>XMP</code> 属性。</li>
-                      <li>若图片被压缩剥离了元数据，脚本会自动检查同名 <code>.json</code> 侧边栏文件。</li>
-                      <li>脚本生成 <code>public/images-data.json</code> 前端数据库，React 启动后直接 Fetch 该数据并提供搜索、过滤、展示。</li>
+                      <li>Node 脚本 <code>scan-media.js</code> 会读取所有子文件夹，解析 PNG Chunks 中的 <code>tEXt/iTXt</code> 字段，或 WebP 的 <code>XMP</code> 属性。</li>
+                      <li>若媒体被压缩剥离了元数据，脚本会自动检查同名 <code>.json</code> 侧边栏文件。</li>
+                      <li>脚本生成 <code>public/media-data.json</code> 前端数据库，React 启动后直接 Fetch 该数据并提供搜索、过滤、展示。</li>
                     </ol>
                   </div>
                 </section>
@@ -763,9 +803,9 @@ function App() {
                       <p>直接在网页上操作，无需运行任何脚本或可执行文件：</p>
                       <ol>
                         <li>点击顶部导航栏的 <strong>“选择本地目录”</strong> 按钮。</li>
-                        <li>在浏览器弹出的文件选择器中，选择您的 ComfyUI <code>output</code> 文件夹（或任何包含分类子目录的图片文件夹）。</li>
+                        <li>在浏览器弹出的文件选择器中，选择您的 ComfyUI <code>output</code> 文件夹（或任何包含分类子目录的媒体文件夹）。</li>
                         <li>在浏览器上方弹出权限询问时，点击 <strong>“允许访问”</strong> 授予只读权限。</li>
-                        <li>网页端程序会直接在本地解压缩 PNG/WebP 图片并提取所有提示词参数，极速载入浏览！</li>
+                        <li>网页端程序会直接在本地解压缩 PNG/WebP 媒体并提取所有提示词参数，极速载入浏览！</li>
                       </ol>
                       <p className="note-text"><em>注：因安全限制，刷新页面后需重新选择目录授权。若想永久展示，请使用方法二。</em></p>
                     </div>
@@ -779,8 +819,8 @@ function App() {
                         <li><strong>macOS:</strong> 在终端执行 <code>bin/scanner-macos</code>（首次如遇权限拦截需在系统设置中允许，或 <code>chmod +x</code> 授权）。</li>
                       </ul>
                       <ol>
-                        <li>首次运行：在弹出的黑框控制台中，<strong>直接拖入您的图片文件夹</strong>并回车，程序会自动为您创建无占用的软链接绑定。</li>
-                        <li>更新目录：未来当您增删图片时，<strong>只需再次双击它</strong>，数秒内即可自动在后台同步完所有元数据。</li>
+                        <li>首次运行：在弹出的黑框控制台中，<strong>直接拖入您的媒体文件夹</strong>并回车，程序会自动为您创建无占用的软链接绑定。</li>
+                        <li>更新目录：未来当您增删媒体时，<strong>只需再次双击它</strong>，数秒内即可自动在后台同步完所有元数据。</li>
                         <li>若要彻底更换绑定目录，可加上参数 <code>--switch</code> 启动，或直接删除项目根目录的 <code>directory-config.json</code>。</li>
                       </ol>
                     </div>
@@ -790,7 +830,7 @@ function App() {
                       <h3>🛠️ 方法三：常规 Node.js 命令扫描</h3>
                       <p>适合前端开发与部署流程：</p>
                       <ol>
-                        <li>将您的 ComfyUI 外部图片文件夹挂载到 <code>/public/images/</code> (支持直接在 images 目录下新建子文件夹来分类)。</li>
+                        <li>将您的 ComfyUI 外部媒体文件夹挂载到 <code>/public/media/</code> (支持直接在 media 目录下新建子文件夹来分类)。</li>
                         <li>在项目根目录下执行命令行：<code>npm run scan</code>。</li>
                         <li>扫描完成后，执行 <code>npm run dev</code> 启动本地预览，或执行 <code>npm run build</code> 构建平铺静态包。</li>
                       </ol>
@@ -803,7 +843,7 @@ function App() {
 
                 <section id="metadata">
                   <h2>4. ComfyUI 元数据解析机制</h2>
-                  <p>ComfyUI 将其工作流及生成节点配置以下列格式存储在图片中：</p>
+                  <p>ComfyUI 将其工作流及生成节点配置以下列格式存储在媒体中：</p>
                   <ul>
                     <li><strong>PNG 格式:</strong> 存储在二进制头部的 <code>tEXt</code> 文本区块中，关键字为 <code>prompt</code> (生成图 graph API) 和 <code>workflow</code> (前端 UI 连线图)。</li>
                     <li><strong>WebP 格式:</strong> 存储在 RIFF 块的 <code>XMP </code> 元数据段，以 XML 标签包含属性 <code>comfyui:prompt</code> 及 <code>comfyui:workflow</code>。</li>
@@ -823,7 +863,7 @@ function App() {
                       <li>在开发根目录下执行打包命令：<code>npm run build</code></li>
                       <li>编译产物保存在 <code>dist/</code> 目录下。</li>
                       <li><strong>打包免 Node 运行环境</strong>：将项目中的 <code>bin/scanner-win.exe</code> 复制到 <code>dist/</code> 文件夹下，然后将整个 <code>dist/</code> 文件夹打包发送给他人。</li>
-                      <li><strong>使用方法</strong>：他人解压后，双击 <code>dist/</code> 中的 <code>scanner-win.exe</code>，程序会自动检测到处于打包平铺环境，并在 <code>dist/images</code> 创建软链接并实时写出 <code>dist/images-data.json</code>。使用 Live Server 容器或静态 web 服务器启动即可脱离 Node 环境使用！</li>
+                      <li><strong>使用方法</strong>：他人解压后，双击 <code>dist/</code> 中的 <code>scanner-win.exe</code>，程序会自动检测到处于打包平铺环境，并在 <code>dist/media</code> 创建软链接并实时写出 <code>dist/media-data.json</code>。使用 Live Server 容器或静态 web 服务器启动即可脱离 Node 环境使用！</li>
                     </ol>
                   </div>
 
@@ -848,13 +888,8 @@ function App() {
       {/* Footer */}
       <footer className="app-footer">
         <div className="footer-container">
-          <div className="footer-copyright">
+          <div className="footer-copyright" style={{ width: '100%', textAlign: 'center' }}>
             <span>© {new Date().getFullYear()} <span className="gradient-text font-bold">PromptGallery</span>. All Rights Reserved.</span>
-          </div>
-          <div className="footer-icp">
-            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
-              京ICP备2024098765号-1
-            </a>
           </div>
         </div>
       </footer>
@@ -888,10 +923,34 @@ function App() {
             {/* Modal Grid Split: Left = Image, Right = Parameters */}
             <div className="modal-content-grid">
               
-              {/* Left Side: Image display */}
+              {/* Left Side: Media display */}
               <div className="modal-left-panel">
                 <div className="modal-image-container">
-                  <img src={selectedImage.path} alt={selectedImage.filename} />
+                  {selectedImage.type === 'video' ? (
+                    <video 
+                      src={selectedImage.path} 
+                      controls 
+                      autoPlay 
+                      loop 
+                      className="modal-video" 
+                      style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '8px' }}
+                    />
+                  ) : selectedImage.type === 'audio' ? (
+                    <div className="modal-audio-container glass-panel">
+                      <div className="audio-disc-animation">
+                        <svg viewBox="0 0 24 24" width="80" height="80" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="disc-icon"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                      </div>
+                      <audio 
+                        src={selectedImage.path} 
+                        controls 
+                        autoPlay 
+                        className="modal-audio" 
+                        style={{ width: '100%', marginTop: '2rem' }}
+                      />
+                    </div>
+                  ) : (
+                    <img src={selectedImage.path} alt={selectedImage.filename} />
+                  )}
                 </div>
                 <div className="modal-image-actions">
                   <span className={`category-badge category-${selectedImage.category}`}>
@@ -899,10 +958,10 @@ function App() {
                   </span>
                   <div className="action-buttons-group">
                     <button 
-                      className="btn-secondary"
+                      className="btn-primary"
                       onClick={() => downloadImage(selectedImage.path, selectedImage.filename)}
                     >
-                      <Download size={16} /> <span>下载原图</span>
+                      <Download size={16} /> <span>下载文件</span>
                     </button>
                   </div>
                 </div>
@@ -1071,7 +1130,7 @@ function App() {
                   <div className="no-metadata-placeholder glass-panel">
                     <Info size={24} className="info-icon" />
                     <h4>没有找到 ComfyUI 元数据</h4>
-                    <p>该图片可能是在其他软件中编辑过，或者已被剥离了元数据信息。</p>
+                    <p>该媒体可能是在其他软件中编辑过，或者已被剥离了元数据信息。</p>
                     <p className="hint">
                       您可以为其添加一个同名的 <code>.json</code> 侧边栏文件（例如 <code>{selectedImage.filename.substring(0, selectedImage.filename.lastIndexOf('.'))}.json</code>）并再次扫描，网站便会自动读取并展示参数！
                     </p>

@@ -123,8 +123,8 @@ const natureSrc = files.find(f => f.startsWith('mountain_lake') && f.endsWith('.
 if (cyberpunkSrc) {
   processImage(
     path.join(brainDir, cyberpunkSrc),
-    path.join(__dirname, 'public', 'images', 'cyberpunk', 'cyberpunk_street.jpg'),
-    path.join(__dirname, 'public', 'images', 'cyberpunk', 'cyberpunk_street.json'),
+    path.join(__dirname, 'public', 'media', 'cyberpunk', 'cyberpunk_street.jpg'),
+    path.join(__dirname, 'public', 'media', 'cyberpunk', 'cyberpunk_street.json'),
     'gorgeous cyberpunk city street at night, neon lights reflection on wet street pavement, futuristic high-tech vehicles, and cybernetic pedestrians, sleek glassmorphism style, cinematic, highly detailed',
     'blurry, lowres, monochrome, deformed, bad anatomy, bad lighting, text, watermark, bad quality, anime, illustration',
     30, 7.5, 'euler_ancestral', 'karras', 857392019482, 'cyberpunkRealistic_v20.safetensors', 1024, 1024
@@ -136,8 +136,8 @@ if (cyberpunkSrc) {
 if (fantasySrc) {
   processImage(
     path.join(brainDir, fantasySrc),
-    path.join(__dirname, 'public', 'images', 'fantasy', 'magic_forest.jpg'),
-    path.join(__dirname, 'public', 'images', 'fantasy', 'magic_forest.json'),
+    path.join(__dirname, 'public', 'media', 'fantasy', 'magic_forest.jpg'),
+    path.join(__dirname, 'public', 'media', 'fantasy', 'magic_forest.json'),
     'magical hidden forest sanctuary, glowing mushrooms, crystal clear river, mystical glowing tree of life in the center, ethereal fairy lights, ultra-detailed fantasy art, enchanting vibe',
     'modern buildings, concrete, cars, low quality, blurry, human, ugly, bad drawing, deformed, worst quality, monochrome',
     28, 6.0, 'dpmpp_2m', 'exponential', 482019483019, 'dreamshaper_v8.safetensors', 1024, 1024
@@ -149,8 +149,8 @@ if (fantasySrc) {
 if (natureSrc) {
   processImage(
     path.join(brainDir, natureSrc),
-    path.join(__dirname, 'public', 'images', 'nature', 'mountain_lake.jpg'),
-    path.join(__dirname, 'public', 'images', 'nature', 'mountain_lake.json'),
+    path.join(__dirname, 'public', 'media', 'nature', 'mountain_lake.jpg'),
+    path.join(__dirname, 'public', 'media', 'nature', 'mountain_lake.json'),
     'majestic sun-kissed mountain range, clear alpine lake reflecting the snow-covered peaks, lush green pine forest, golden hour lighting, breathtaking landscape photography',
     'anime, cartoon, drawing, fake, oversaturated, city, structures, people, bad quality, blurry, watermark, signature',
     25, 7.0, 'dpmpp_sde', 'normal', 102948204918, 'sd_xl_base_1.0.safetensors', 1216, 832

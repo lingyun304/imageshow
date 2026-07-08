@@ -325,17 +325,23 @@ export async function scanLocalDirectory(dirHandle, onProgress) {
           } catch (e) {
             console.error('Failed to parse sidecar JSON:', file.name, e);
           }
-        } else if (['.png', '.webp', '.jpg', '.jpeg'].includes(ext)) {
-          imageFiles.push({
-            file,
-            category,
-            name: nameWithoutExt,
-            ext,
-            filename: file.name,
-            size: formatBytes(file.size),
-            rawSizeBytes: file.size,
-            updatedAt: new Date(file.lastModified).toISOString()
-          });
+        } else {
+          const isImage = ['.png', '.webp', '.jpg', '.jpeg', '.gif', '.bmp', '.svg'].includes(ext);
+          const isVideo = ['.mp4', '.webm', '.mov', '.avi', '.mkv'].includes(ext);
+          const isAudio = ['.mp3', '.wav', '.flac', '.aac', '.m4a', '.ogg'].includes(ext);
+          if (isImage || isVideo || isAudio) {
+            imageFiles.push({
+              file,
+              category,
+              name: nameWithoutExt,
+              ext,
+              type: isImage ? 'image' : (isVideo ? 'video' : 'audio'),
+              filename: file.name,
+              size: formatBytes(file.size),
+              rawSizeBytes: file.size,
+              updatedAt: new Date(file.lastModified).toISOString()
+            });
+          }
         }
       }
     }
@@ -391,6 +397,7 @@ export async function scanLocalDirectory(dirHandle, onProgress) {
       filename: img.filename,
       category: img.category,
       path: objectUrl,
+      type: img.type,
       size: img.size,
       rawSizeBytes: img.rawSizeBytes,
       updatedAt: img.updatedAt,

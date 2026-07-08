@@ -19,7 +19,7 @@ npm install
 ```
 
 ### 2.2 扫描本地图片并测试
-在启动调试前，确保您已将至少一张 ComfyUI 生成图片放置于 `public/images/` 的分类文件夹中，然后执行：
+在启动调试前，确保您已将至少一个 ComfyUI 生成媒体放置于 `public/media/` 的分类文件夹中，然后执行：
 ```bash
 # 扫描元数据
 npm run scan
@@ -40,8 +40,8 @@ npm run build
 编译完成后，项目根目录下会生成一个 `dist/` 文件夹。该文件夹包含了网站运行所需的全部纯静态文件：
 - `dist/index.html` (主入口)
 - `dist/assets/` (合并压缩后的 JS 和 CSS 代码)
-- `dist/images-data.json` (被提取的元数据 JSON 库)
-- `dist/images/` (原始分类图片目录)
+- `dist/media-data.json` (被提取的元数据 JSON 库)
+- `dist/media/` (原始分类媒体目录)
 
 ---
 
@@ -69,8 +69,8 @@ npm run build
            add_header Cache-Control "public, no-transform";
        }
 
-       # 对元数据 JSON 禁用强缓存，防止图片更新后前台不刷新
-       location = /images-data.json {
+       # 对元数据 JSON 禁用强缓存，防止媒体更新后前台不刷新
+       location = /media-data.json {
            add_header Cache-Control "no-cache, no-store, must-revalidate";
            expires 0;
        }
@@ -118,5 +118,5 @@ npm run build
 
 ## 5. 日常维护建议
 - **自动化扫描流水线:** 如果使用 Git 进行协作管理，可以将 `npm run scan` 写在 Git 客户端的 `pre-commit` 钩子中，每次提交代码时自动触发扫描，保障远程静态库数据永远是最新的。
-- **打包部署后的免 Node 环境更新**: 为了方便非技术人员在已打包的静态包中进行维护，您可以直接将 `bin/scanner-win.exe` 或 `bin/scanner-macos` 复制到编译出的 `dist/` 文件夹中并双击运行。程序会自动探测环境并在 `dist/images` 进行挂载和重写 `dist/images-data.json`，省去了部署端安装 Node.js 与前端依赖的麻烦。
+- **打包部署后的免 Node 环境更新**: 为了方便非技术人员在已打包的静态包中进行维护，您可以直接将 `bin/scanner-win.exe` 或 `bin/scanner-macos` 复制到编译出的 `dist/` 文件夹中并双击运行。程序会自动探测环境并在 `dist/media` 进行挂载和重写 `dist/media-data.json`，省去了部署端安装 Node.js 与前端依赖的麻烦。
 - **图片尺寸建议:** 建议 ComfyUI 生成图片直接使用 JPG 或经过 WebP 压缩，或在前台展示时采用 WebP 格式，单个图片体积控制在 2MB 以下，从而提供最佳的页面首屏加载和瀑布流滚动流畅度。
