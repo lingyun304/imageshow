@@ -129,7 +129,14 @@ function App() {
       setSelectedTags(selectedTags.filter(t => t.raw !== rawTag));
     } else {
       const { clean, weight } = parseTag(rawTag);
-      setSelectedTags([...selectedTags, { raw: rawTag, clean, weight, category }]);
+      let zh = '';
+      if (tagDatabase && tagDatabase[category]) {
+        const found = tagDatabase[category].tags.find(t => (Array.isArray(t) ? t[0] : t) === rawTag);
+        if (found && Array.isArray(found)) {
+          zh = found[1];
+        }
+      }
+      setSelectedTags([...selectedTags, { raw: rawTag, clean, weight, category, zh }]);
     }
   };
 
@@ -1029,20 +1036,28 @@ function App() {
                             if (searchScope === 'global') {
                               Object.keys(tagDatabase).forEach(catKey => {
                                 tagDatabase[catKey].tags.forEach(tag => {
-                                  if (tag.toLowerCase().includes(query)) {
-                                    filteredTags.push({ raw: tag, category: catKey });
+                                  const en = Array.isArray(tag) ? tag[0] : tag;
+                                  const zh = Array.isArray(tag) ? tag[1] : '';
+                                  if (en.toLowerCase().includes(query) || (zh && zh.toLowerCase().includes(query))) {
+                                    filteredTags.push({ raw: en, zh: zh, category: catKey });
                                   }
                                 });
                               });
                             } else {
                               tagDatabase[selectedGenCategory].tags.forEach(tag => {
-                                if (tag.toLowerCase().includes(query)) {
-                                  filteredTags.push({ raw: tag, category: selectedGenCategory });
+                                const en = Array.isArray(tag) ? tag[0] : tag;
+                                const zh = Array.isArray(tag) ? tag[1] : '';
+                                if (en.toLowerCase().includes(query) || (zh && zh.toLowerCase().includes(query))) {
+                                  filteredTags.push({ raw: en, zh: zh, category: selectedGenCategory });
                                 }
                               });
                             }
                           } else {
-                            filteredTags = tagDatabase[selectedGenCategory].tags.map(tag => ({ raw: tag, category: selectedGenCategory }));
+                            filteredTags = tagDatabase[selectedGenCategory].tags.map(tag => {
+                              const en = Array.isArray(tag) ? tag[0] : tag;
+                              const zh = Array.isArray(tag) ? tag[1] : '';
+                              return { raw: en, zh: zh, category: selectedGenCategory };
+                            });
                           }
 
                           const showLimit = genSearchQuery.trim() ? 500 : 150;
@@ -1064,14 +1079,15 @@ function App() {
                                   {displayed.map((tagObj, idx) => {
                                     const isSelected = selectedTags.some(t => t.raw === tagObj.raw);
                                     const cleanName = parseTag(tagObj.raw).clean;
+                                    const displayName = tagObj.zh ? `${cleanName} (${tagObj.zh})` : cleanName;
                                     return (
                                       <button
                                         key={`${tagObj.raw}-${idx}`}
                                         className={`tag-pill-btn ${isSelected ? 'selected' : ''}`}
                                         onClick={() => handleToggleTag(tagObj.raw, tagObj.category)}
-                                        title={`${tagObj.raw} (${tagObj.category})`}
+                                        title={`${tagObj.raw} ${tagObj.zh ? '| ' + tagObj.zh : ''} (${tagObj.category})`}
                                       >
-                                        <span className="tag-pill-name">{cleanName}</span>
+                                        <span className="tag-pill-name">{displayName}</span>
                                         {isSelected && <span className="tag-pill-check">✓</span>}
                                       </button>
                                     );
@@ -1114,7 +1130,7 @@ function App() {
                         return (
                           <div key={`${tagObj.raw}-${idx}`} className="selected-tag-chip">
                             <span className="chip-category-label">{tagDatabase?.[tagObj.category]?.displayName || tagObj.category}</span>
-                            <span className="chip-name">{tagObj.clean}</span>
+                            <span className="chip-name">{tagObj.zh ? `${tagObj.clean} (${tagObj.zh})` : tagObj.clean}</span>
                             
                             <div className="weight-adjuster">
                               <button 
