@@ -38,7 +38,7 @@ const categoryTranslations = {
   "hair": "头发/发型"
 };
 
-// Predefined vocabulary for splitting and word-by-word fallback translation
+// Vocabulary for word-by-word splitting and fallback translation
 const vocab = {
   // Colors
   "blonde": "金色", "brown": "棕色", "black": "黑色", "blue": "蓝色", "white": "白色", "pink": "粉色",
@@ -62,7 +62,7 @@ const vocab = {
   "thighs": "大腿", "knee": "膝盖", "knees": "膝盖", "finger": "手指", "fingers": "手指", "toe": "脚趾", "toes": "脚趾",
   "horn": "角", "horns": "双角", "wing": "翅膀", "wings": "双翼", "tail": "尾巴", "tails": "多尾", "body": "身体",
   "muscle": "肌肉", "hairy": "多毛", "nipple": "乳头", "nipples": "乳头", "clitoris": "阴蒂", "vagina": "阴道",
-  "penis": "阴茎", "ass": "屁股", "butt": "臀部", "buttocks": "屁股", "stomach": "胃部/小腹",
+  "penis": "阴茎", "ass": "屁股", "butt": "臀部", "buttocks": "屁股", "stomach": "小腹/肚子",
 
   // Clothes / Outfits
   "clothes": "衣服", "clothing": "服装", "dress": "连衣裙", "skirt": "半身裙", "shirt": "衬衫", "pants": "裤子",
@@ -85,7 +85,9 @@ const vocab = {
   "transparent": "透明", "translucent": "半透明", "sheer": "薄纱/透视", "see-through": "透视", "wet": "湿漉漉的",
   "shiny": "闪亮", "glowing": "发光", "metallic": "金属质感", "leather": "皮革", "latex": "乳胶",
   "silk": "丝绸", "denim": "牛仔", "fur": "毛皮", "velvet": "天鹅绒", "rubber": "橡胶", "woolen": "羊毛",
-  "knitted": "针织",
+  "knitted": "针织", "swimwear": "泳衣", "choker": "颈圈", "bowtie": "蝴蝶结领结", "sash": "腰带/饰带",
+  "robe": "长袍/睡袍", "jumpsuit": "连体裤", "camisole": "吊带背心", "capelet": "小披肩", "shawl": "披肩",
+  "tank": "背心/吊带", "cuffs": "袖口/手铐", "unworn": "未穿戴的/脱下的", "footwear": "鞋类/鞋子",
 
   // Actions & Poses
   "sitting": "坐", "standing": "站", "lying": "躺", "kneeling": "跪", "squatting": "蹲", "running": "奔跑",
@@ -104,6 +106,7 @@ const vocab = {
   "smiling": "微笑", "laughing": "大笑", "crying": "哭泣", "screaming": "尖叫", "yawning": "打哈欠",
   "blushing": "脸红", "pouting": "撇嘴", "frowning": "皱眉", "wink": "眨眼/眨眼示意", "winking": "眨眼",
   "sleeping": "睡觉", "resting": "休息", "stretching": "伸展", "bending": "弯腰", "leaning": "倚靠",
+  "pose": "姿势", "lift": "提起/举起",
 
   // Environment & Props
   "background": "背景", "indoor": "室内", "indoors": "室内", "outdoor": "室外", "outdoors": "室外",
@@ -122,6 +125,8 @@ const vocab = {
   "door": "门", "wall": "墙壁", "floor": "地板", "curtain": "窗帘", "mirror": "镜子",
   "book": "书", "phone": "手机", "camera": "相机", "cup": "杯子", "glass": "玻璃杯",
   "sword": "剑", "weapon": "武器", "gun": "枪", "shield": "盾牌", "magic": "魔法",
+  "prop": "道具", "object": "物品", "ornament": "饰品/装饰", "jewellery": "珠宝/首饰",
+  "photography": "摄影", "chain": "链条/链子", "wrist": "手腕",
 
   // Qualifiers & Quantifiers
   "one": "一个", "two": "两个", "three": "三个", "multiple": "多个", "single": "单个",
@@ -144,7 +149,165 @@ const vocab = {
   "parody": "二创", "crossover": "跨界联名", "monochrome": "单色/黑白", "grayscale": "灰度",
   "sketch": "草图/手稿", "lineart": "线稿", "color": "彩色", "colored": "上色的",
   "digital": "数码绘", "traditional": "手绘/传统", "watercolor": "水彩", "oil_painting": "油画",
-  "acrylic": "丙烯", "ink": "墨水", "pencil": "铅笔", "marker": "马克笔", "pastel": "粉彩"
+  "acrylic": "丙烯", "ink": "墨水", "pencil": "铅笔", "marker": "马克笔", "pastel": "粉彩",
+
+  // Themes Category Base Words
+  "abstract": "抽象", "adventure": "冒险", "alien": "外星人", "ancient": "古代", "apocalyptic": "末日",
+  "aquatic": "水生/水下", "arabian": "阿拉伯", "art_deco": "装饰艺术", "asian": "亚洲", "astral": "星界/星空",
+  "autumn": "秋天", "aviation": "航空", "cyberpunk": "赛博朋克", "steampunk": "蒸汽朋克", "gothic": "哥特",
+  "medieval": "中世纪", "military": "军事", "space": "太空", "vintage": "复古", "retro": "怀旧",
+  "theme": "主题", "style": "风格", "cosplay": "角色扮演",
+  "apocalypse": "末日", "nouveau": "新", "decor": "装饰", "deco": "装饰", "astronaut": "宇航员",
+  "baroque": "巴洛克", "birthday": "生日", "botanical": "植物", "cartoon": "卡通", "casual": "休闲",
+  "celestial": "天空/神圣", "celtic": "凯尔特", "classic": "经典", "cinematic": "电影级", "dark": "黑暗",
+  "dreamy": "梦幻", "elegant": "优雅", "enchanted": "迷人/魔法", "ethereal": "空灵", "fantasy": "幻想/奇幻",
+  "futuristic": "未来感", "garden": "花园", "girly": "少女", "halloween": "万圣节",
+  "historical": "历史", "holiday": "节日", "horror": "恐怖", "humorous": "幽默", "industrial": "工业",
+  "luxury": "奢华", "magical": "魔法", "modern": "现代", "monochromatic": "单色",
+  "mystical": "神秘", "nature": "自然", "neon": "霓虹", "nostalgic": "怀旧", "ocean": "海洋",
+  "outer": "外", "pastel": "粉彩/柔和", "pirate": "海盗", "playful": "俏皮/顽皮",
+  "rustic": "乡村/质朴", "sci-fi": "科幻", "seasonal": "季节性", "surreal": "超现实", "techno": "高科技",
+  "tropical": "热带", "western": "西方", "whimsical": "怪诞/奇幻", "winter": "冬季",
+
+  // Emotions & Expressions Base Words
+  "happy": "开心", "sad": "伤心", "angry": "生气", "surprised": "惊讶", "scared": "害怕",
+  "excited": "兴奋", "bored": "无聊", "tired": "疲倦", "confused": "困惑", "proud": "自豪",
+  "shy": "害羞", "disgusted": "厌恶", "jealous": "嫉妒", "guilty": "内疚", "anxious": "焦虑",
+  "calm": "冷静", "serious": "严肃", "determined": "坚定", "thoughtful": "深思", "curious": "好奇",
+  "hopeful": "希望", "apathetic": "冷漠", "relieved": "宽慰", "disappointed": "失望", "lonely": "孤独",
+  "loved": "被爱", "silly": "滑稽", "nervous": "紧张", "sleepy": "困倦", "shocked": "震惊",
+  "frightened": "惊吓", "grateful": "感激",
+
+
+  // Animals Category Base Words
+  "aardvark": "土豚", "abominable_snowman": "雪人", "alligator": "短吻鳄", "angel": "天使", "ant": "蚂蚁",
+  "albatross": "信天翁", "alpaca": "羊驼", "ape": "大猩猩/类人猿", "armadillo": "犰狳", "baboon": "狒狒",
+  "badger": "獾", "bat": "蝙蝠", "bear": "熊", "bee": "蜜蜂", "beetle": "甲虫", "bird": "鸟",
+  "bison": "野牛", "boar": "野猪", "buffalo": "水牛", "butterfly": "蝴蝶", "camel": "骆驼",
+  "cat": "猫", "centaur": "半人马", "chameleon": "避役/变色龙", "cheetah": "猎豹", "chicken": "鸡",
+  "chimpanzee": "黑猩猩", "cobra": "眼镜蛇", "cockroach": "蟑螂", "cow": "奶牛", "coyote": "郊狼",
+  "crab": "螃蟹", "crane": "鹤", "crocodile": "鳄鱼", "crow": "乌鸦", "deer": "鹿", "demon": "恶魔",
+  "dinosaur": "恐龙", "dog": "狗", "dolphin": "海豚", "donkey": "驴", "dragon": "龙", "duck": "鸭子",
+  "eagle": "鹰", "elephant": "大象", "elk": "驼鹿", "falcon": "隼/鹰", "ferret": "雪貂", "fish": "鱼",
+  "flamingo": "火烈鸟", "fly": "苍蝇", "fox": "狐狸", "frog": "青蛙", "giraffe": "长颈鹿", "goat": "山羊",
+  "goose": "鹅", "gorilla": "大猩猩", "grasshopper": "蚱蜢", "grizzly_bear": "灰熊", "hamster": "仓鼠",
+  "hare": "野兔", "hawk": "鹰/隼", "hedgehog": "刺猬", "hippopotamus": "河马", "horse": "马",
+  "hyena": "鬣狗", "jaguar": "美洲豹", "kangaroo": "袋鼠", "koala": "考拉", "leopard": "豹",
+  "lion": "狮子", "lizard": "蜥蜴", "llama": "大羊驼", "lobster": "龙虾", "monkey": "猴子",
+  "moose": "驼鹿", "mosquito": "蚊子", "moth": "蛾", "mouse": "老鼠", "mule": "骡子", "octopus": "章鱼",
+  "ostrich": "鸵鸟", "owl": "猫头鹰", "panda": "熊猫", "panther": "黑豹", "parrot": "鹦鹉",
+  "peacock": "孔雀", "pelican": "鹈鹕", "penguins": "企鹅", "penguin": "企鹅", "pig": "猪", "pigeon": "鸽子",
+  "platypus": "鸭嘴兽", "rabbit": "兔子", "raccoon": "浣熊", "rat": "大鼠", "raven": "渡鸦",
+  "reindeer": "驯鹿", "rhinoceros": "犀牛", "salamander": "蝾螈", "salmon": "鲑鱼/三文鱼", "seagull": "海鸥",
+  "seahorse": "海马", "seal": "海豹", "shark": "鲨鱼", "sheep": "绵羊", "snake": "蛇", "spider": "蜘蛛",
+  "squid": "鱿鱼", "squirrel": "松鼠", "swan": "天鹅", "tiger": "老虎", "toad": "蟾蜍", "turkey": "火鸡",
+  "turtle": "乌龟", "walrus": "海象", "wasp": "黄蜂", "weasel": "鼬/黄鼠狼", "whale": "鲸鱼", "wolf": "狼",
+  "yak": "牦牛", "zebra": "斑马", "creature": "生物", "bug": "昆虫", "insect": "昆虫",
+
+  // Fabrics Category Base Words
+  "acetate": "醋酸纤维", "alpaca_wool": "羊驼毛", "angora_wool": "安哥拉兔毛", "bamboo": "竹纤维",
+  "cashmere_wool": "山羊绒", "chiffon": "雪纺", "cotton": "棉布", "denim": "牛仔布", "flannel": "法兰绒",
+  "lace": "蕾丝", "leather": "皮革", "linen": "亚麻", "nylon": "尼龙", "polyester": "聚酯纤维/涤纶",
+  "satin": "缎面", "silk": "丝绸", "velvet": "天鹅绒", "wool": "羊毛", "canvas": "帆布", "corduroy": "灯芯绒",
+  "fleece": "抓绒", "jersey": "平针织物", "spandex": "氨纶", "tweed": "粗花呢", "viscose": "粘胶纤维",
+  "fabric": "面料/材质",
+
+  // Perspectives
+  "first_person": "第一人称", "second_person": "第二人称", "third_person": "第三人称", "limited": "有限",
+  "omniscient": "全知", "bird_eye": "鸟瞰", "worm_eye": "虫眼/仰视", "fish_eye": "鱼眼", "panoramic": "全景",
+  "close_up": "特写", "wide_angle": "广角", "macro": "微距", "split_screen": "分屏", "isometric": "等距",
+  "orthographic": "正交", "three_quarter": "三分之三/侧面", "profile": "侧面", "front": "正面",
+  "back_perspective": "背面", "side": "侧面", "perspective": "视角",
+
+  // Body Types
+  "ectomorph": "外胚型", "mesomorph": "中胚型", "endomorph": "内胚型", "hourglass": "沙漏型",
+  "pear": "梨型", "apple": "苹果型", "rectangle": "矩形", "inverted_triangle": "倒三角型",
+  "athletic": "运动型", "muscular": "肌肉型", "slim": "苗条", "slender": "纤细", "petite": "娇小",
+  "tall_body_type": "高挑型", "short_body_type": "矮小型", "chubby": "丰满/圆润", "plump": "丰满",
+  "curvy": "凹凸有致", "lean": "精瘦", "fit": "健美", "body_type": "体型",
+
+  // Seasons
+  "spring": "春", "summer": "夏", "autumn": "秋", "winter": "冬", "early_spring": "早春",
+  "late_spring": "晚春", "early_summer": "初夏", "late_summer": "晚夏", "early_autumn": "初秋",
+  "late_autumn": "深秋", "early_winter": "初冬", "late_winter": "深冬", "dry_season": "干燥季节",
+  "wet_season": "潮湿季节", "monsoon_season": "雨季", "season": "季节",
+
+  // Tattoos base words
+  "traditional": "传统", "american": "美式", "neo": "新", "japanese": "日式", "irezumi": "入墨",
+  "horimono": "雕物", "tebori": "手雕", "hannya": "般若", "koi": "锦鲤", "cherry": "樱桃",
+  "blossom": "樱花", "sakura": "樱花", "geisha": "艺伎", "lotus": "莲花", "chrysanthemum": "菊花",
+  "peony": "牡丹", "skull": "骷髅", "maori": "毛利", "polynesian": "波利尼西亚", "samoan": "萨摩亚",
+  "mandala": "曼荼罗", "geometric": "几何", "blackwork": "黑灰", "dotwork": "点刺", "script": "文字",
+  "lettering": "刻字", "quote": "引用", "trash": "垃圾/废土", "polka": "波尔卡", "realism": "写实",
+  "surrealism": "超现实", "biomechanical": "生物机械", "anchor": "锚", "feather": "羽毛", "arrow": "箭",
+  "dreamcatcher": "捕梦网", "life": "生命", "astrological": "占星", "constellation": "星座",
+  "nebula": "星云", "universe": "宇宙", "cosmic": "宇宙", "ufo": "飞碟", "rocket": "火箭",
+  "earth": "地球", "jupiter": "木星", "saturn": "土星", "tattoo": "纹身",
+
+  // Lighting base words
+  "ambient": "环境", "diffused": "漫反射/弥散", "sharp": "锐利", "streaks": "光条", "dynamic": "动态",
+  "lights": "光", "cinematic": "电影级", "luminous": "明亮/发光", "intricate": "复杂/精致",
+  "dramatic": "戏剧性", "gentle": "温柔/柔和", "radiance": "光辉", "candlelit": "烛光", "ambiance": "氛围",
+  "cool": "冷", "moonlit": "月光", "lighting": "光照", "glow": "发光", "hue": "色调",
+
+  // Quality base words
+  "details": "细节", "many": "许多", "extreme": "极致", "detailed": "细节", "full": "充满",
+  "of": "的", "range": "范围", "colors": "颜色", "insane": "疯狂", "quality": "质量",
+  "resolution": "分辨率", "photorealistic": "照片级真实", "absurdres": "极高分辨率", "8k": "8K",
+  "photograph": "照片", "32k": "32K", "raw": "原始/无修", "photo": "照片", "toned": "健美",
+  "masterpiece": "杰作",
+
+  // Body Types extra base words
+  "inverted": "倒", "triangle": "三角", "ruler": "直尺", "curves": "曲线", "plus": "大",
+  "size": "码", "plus-size": "丰满", "skinny": "纤瘦", "lollipop": "棒棒糖", "bell": "铃铛",
+  "strawberry": "草莓", "oval": "椭圆", "diamond": "钻石", "shaped": "型", "heart-shaped": "心型",
+  "trapezoid": "梯形", "cone": "圆锥", "figure": "身材", "eight": "八", "figure-eight": "八字",
+
+  // Perspectives extra base words
+  "first": "第一", "second": "第二", "third": "第三", "person": "人称", "objective": "客观",
+  "subjective": "主观", "close": "近景", "distant": "远景", "bird": "鸟", "overhead": "顶视",
+  "ground": "地面", "level": "高度/平视", "eye-level": "平视", "angle": "角度", "worm": "虫",
+  "panoramic": "全景", "wide": "广", "macro": "微距", "split": "分", "screen": "屏",
+  "isometric": "等距", "orthographic": "正交", "three-quarter": "四分之三", "profile": "侧面",
+  "worms_eye": "仰视", "birds_eye": "俯视",
+
+  // Age base words
+  "child": "儿童", "teenager": "青少年", "adult": "成年", "elderly": "老年", "senior": "长者",
+  "baby": "婴儿", "toddler": "幼童", "infant": "婴儿", "middle-aged": "中年",
+
+  // Fabric extra words
+  "faux": "人造", "floral": "碎花", "gabardine": "华达呢", "georgette": "乔其纱", "jacquard": "提花",
+  "mesh": "网眼", "microfiber": "超细纤维", "mohair": "马海毛",
+
+  // Season extra words
+  "early": "初", "late": "深",
+
+  // Nationalities
+  "african": "非洲", "american": "美国", "albanian": "阿尔巴尼亚", "algerian": "阿尔及利亚",
+  "andorran": "安道尔", "angolan": "安格拉", "argentinian": "阿根廷", "armenian": "亚美尼亚",
+  "australian": "澳大利亚", "austrian": "奥地利", "azerbaijani": "阿塞拜疆", "bahamian": "巴哈马",
+  "bangladeshi": "孟加拉国", "barbadian": "巴巴多斯", "belgian": "比利时", "belizian": "伯利兹",
+  "beninese": "贝宁", "bhutanese": "不丹", "bolivian": "玻利维亚", "bosnian": "波斯尼亚",
+  "brazilian": "巴西", "british": "英国", "bulgarian": "保加利亚", "cambodian": "柬埔寨",
+  "canadian": "加拿大", "chilean": "智利", "chinese": "中国", "colombian": "哥伦比亚",
+  "croatian": "克罗地亚", "cuban": "古巴", "cypriot": "塞浦路斯", "czech": "捷克", "danish": "丹麦",
+  "egyptian": "埃及", "english": "英国", "estonian": "爱沙尼亚", "ethiopian": "埃塞俄比亚",
+  "filipino": "菲律宾", "finnish": "芬兰", "french": "法国", "georgian": "格鲁吉亚", "german": "德国",
+  "greek": "希腊", "hungarian": "匈牙利", "icelandic": "冰岛", "indian": "印度", "indonesian": "印度尼西亚",
+  "iranian": "伊朗", "iraqi": "伊拉克", "irish": "爱尔兰", "israeli": "以色列", "italian": "意大利",
+  "jamaican": "烟台", "japanese": "日本", "jordanian": "约旦", "kazakh": "哈萨克斯坦", "kenyan": "肯尼亚",
+  "korean": "韩国", "kuwaiti": "科威特", "latvian": "拉脱维亚", "lebanese": "黎巴嫩", "libyan": "利比亚",
+  "lithuanian": "立陶宛", "luxembourger": "卢森堡", "macedonian": "马其顿", "malagasy": "马达加斯加",
+  "malaysian": "马来西亚", "maltese": "马耳他", "mexican": "墨西哥", "mongolian": "蒙古",
+  "moroccan": "摩洛哥", "nepalese": "尼泊尔", "dutch": "荷兰", "new_zealander": "新西兰",
+  "nigerian": "尼日利亚", "norwegian": "挪威", "pakistani": "巴基斯坦", "palestinian": "巴勒斯坦",
+  "peruvian": "秘鲁", "polish": "波兰", "portuguese": "葡萄牙", "romanian": "罗马尼亚",
+  "russian": "俄罗斯", "saudi": "沙特", "scottish": "苏格兰", "singaporean": "新加坡",
+  "slovak": "斯洛伐克", "slovenian": "斯洛文尼亚", "somali": "索马里", "spanish": "西班牙",
+  "sudanese": "苏丹", "swedish": "瑞典", "swiss": "瑞士", "syrian": "叙利亚", "taiwanese": "中国台湾",
+  "thai": "泰国", "tunisian": "突尼斯", "turkish": "土耳其", "ukrainian": "乌克兰", "uruguayan": "乌拉圭",
+  "venezuelan": "委内瑞拉", "vietnamese": "越南", "welsh": "威尔士", "yemeni": "也门",
+  "zambian": "赞比亚", "zimbabwean": "津巴布韦"
 };
 
 function parseTag(rawTag) {
@@ -158,7 +321,8 @@ function parseTag(rawTag) {
       clean = parenMatch[1].trim();
     }
   }
-  return clean.toLowerCase();
+  // Replace commas and other punctuation with spaces to avoid joining words incorrectly
+  return clean.toLowerCase().replace(/[,;]+/g, ' ').replace(/\s+/g, '_');
 }
 
 function downloadTranslationFile(url, dest) {
@@ -228,7 +392,22 @@ async function buildTags() {
       }
     }
 
-    // Translation function
+    // Helper to extract short, clean translation from vocab or static map
+    const getShortTranslation = (word) => {
+      if (!word) return null;
+      // Strip possessives and non-alphanumeric chars
+      const cleanW = word.replace(/'s$/, '').replace(/[^a-z0-9-]/gi, '').toLowerCase();
+      if (!cleanW) return null;
+      
+      if (vocab[cleanW]) return vocab[cleanW];
+      if (staticMap[cleanW]) {
+        const first = staticMap[cleanW].split(/[，,、/;；]/)[0].trim();
+        return first.replace(/\(.*?\)/g, '').replace(/（.*?）/g, '').trim();
+      }
+      return null;
+    };
+
+    // Advanced translation engine combining static, rules, and splits
     const translateTag = (rawTag) => {
       const clean = parseTag(rawTag);
       
@@ -237,11 +416,52 @@ async function buildTags() {
         return staticMap[clean];
       }
       
-      // 2. Try word-by-word translate if contains underscores
+      // 2. Age Rule (e.g. 12_years_old -> 12岁)
+      if (/^(\d+)_years?_old$/.test(clean)) {
+        return clean.replace(/^(\d+)_years?_old$/, "$1岁");
+      }
+
+      // 3. Suffix Rules for specific categories
+      const suffixes = [
+        { suffix: '_theme', zhSuffix: '主题' },
+        { suffix: '_animal', zhSuffix: '动物' },
+        { suffix: '_creature', zhSuffix: '生物' },
+        { suffix: '_object', zhSuffix: '物品' },
+        { suffix: '_prop', zhSuffix: '道具' },
+        { suffix: '_bug_insect', zhSuffix: '昆虫' },
+        { suffix: '_emotion', zhSuffix: '情绪' },
+        { suffix: '_environment', zhSuffix: '环境' },
+        { suffix: '_wool_fabric', zhSuffix: '羊毛面料' },
+        { suffix: '_fabric', zhSuffix: '面料' },
+        { suffix: '_weather', zhSuffix: '天气' },
+        { suffix: '_perspective', zhSuffix: '视角' },
+        { suffix: '_body_type', zhSuffix: '体型' },
+        { suffix: '_season', zhSuffix: '季节' },
+        { suffix: '_lighting', zhSuffix: '光照' },
+        { suffix: '_tattoo', zhSuffix: '纹身' },
+        { suffix: '_style', zhSuffix: '风格' },
+        { suffix: '_art', zhSuffix: '艺术' },
+        { suffix: '_design', zhSuffix: '设计' },
+        { suffix: '_designs', zhSuffix: '设计' }
+      ];
+
+      for (const { suffix, zhSuffix } of suffixes) {
+        if (clean.endsWith(suffix)) {
+          const base = clean.substring(0, clean.length - suffix.length);
+          const baseWords = base.split('_').filter(w => w.length > 0);
+          const translatedBaseWords = baseWords.map(w => getShortTranslation(w));
+          if (translatedBaseWords.every(w => w !== null)) {
+            return translatedBaseWords.join('') + zhSuffix;
+          }
+        }
+      }
+      
+      // 4. Try word-by-word translate if contains underscores
       if (clean.includes('_')) {
-        const words = clean.split('_');
+        const words = clean.split('_').filter(w => w.length > 0);
         const translatedWords = words.map(w => {
-          if (vocab[w]) return vocab[w];
+          const t = getShortTranslation(w);
+          if (t) return t;
           if (/^[0-9]+$/.test(w)) return w;
           return null;
         });
@@ -277,7 +497,7 @@ async function buildTags() {
           let result = translatedWords.join('');
           result = result.replace(/色发$/, '发');
           result = result.replace(/色眼$/, '眼');
-          result = result.replace(/色皮肤$/, '色肤色');
+          result = result.replace(/色皮肤$/, '色皮肤');
           result = result.replace(/色肤色$/, '色皮肤');
           return result;
         }
