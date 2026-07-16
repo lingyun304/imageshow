@@ -24,10 +24,35 @@ import {
   FileText,
   Moon,
   Leaf,
-  Zap
+  Zap,
+  Plus,
+  Minus,
+  Trash2,
+  HelpCircle,
+  RefreshCw
 } from 'lucide-react';
 import './App.css';
 import { scanLocalDirectory } from './utils/metadataParser';
+
+// Helper to parse weights and parentheses from raw tags
+function parseTag(rawTag) {
+  let clean = rawTag.trim();
+  let weight = 1.0;
+
+  // Matches ((tag:weight)) or (tag:weight)
+  const match = clean.match(/^\(+(.+?):([0-9.]+)\)+$/);
+  if (match) {
+    clean = match[1].trim();
+    weight = parseFloat(match[2]);
+  } else {
+    // Check if it's just wrapped in parentheses like (((tag)))
+    const parenMatch = clean.match(/^\(+(.+?)\)+$/);
+    if (parenMatch) {
+      clean = parenMatch[1].trim();
+    }
+  }
+  return { clean, weight };
+}
 
 function App() {
   // Theme state
@@ -69,6 +94,129 @@ function App() {
   // Toast Notification
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [copiedField, setCopiedField] = useState('');
+
+  // Prompt Generator States
+  const [tagDatabase, setTagDatabase] = useState(null);
+  const [selectedGenCategory, setSelectedGenCategory] = useState('Age');
+  const [genSearchQuery, setGenSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]); // Array of { raw, clean, weight, category }
+  const [genModel, setGenModel] = useState('pony'); // 'pony', 'illustrious', 'anime'
+  const [genRating, setGenRating] = useState('safe'); // 'safe', 'sensitive', 'nsfw', 'explicit'
+  const [customGenPrefix, setCustomGenPrefix] = useState('');
+  const [customGenSuffix, setCustomGenSuffix] = useState('');
+  const [searchScope, setSearchScope] = useState('global'); // 'global' or 'category'
+
+  // Fetch tag database
+  useEffect(() => {
+    fetch('/tag-data.json')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Tags database JSON not found.');
+        }
+        return res.json();
+      })
+      .then(data => {
+        setTagDatabase(data);
+      })
+      .catch(err => {
+        console.error('Error loading tag database:', err);
+      });
+  }, []);
+
+  const handleToggleTag = (rawTag, category) => {
+    const isSelected = selectedTags.some(t => t.raw === rawTag);
+    if (isSelected) {
+      setSelectedTags(selectedTags.filter(t => t.raw !== rawTag));
+    } else {
+      const { clean, weight } = parseTag(rawTag);
+      setSelectedTags([...selectedTags, { raw: rawTag, clean, weight, category }]);
+    }
+  };
+
+  const handleAdjustWeight = (rawTag, delta) => {
+    setSelectedTags(selectedTags.map(t => {
+      if (t.raw === rawTag) {
+        const newWeight = Math.round((t.weight + delta) * 10) / 10;
+        if (newWeight >= 0.1 && newWeight <= 2.5) {
+          return { ...t, weight: newWeight };
+        }
+      }
+      return t;
+    }));
+  };
+
+  const formatTag = (tagObj) => {
+    if (tagObj.weight === 1.0) {
+      return tagObj.clean;
+    } else {
+      return `(${tagObj.clean}:${tagObj.weight})`;
+    }
+  };
+
+  const generatePrompts = () => {
+    let positive = '';
+    let negative = '';
+
+    let prefixTags = [];
+    let suffixTags = [];
+    
+    if (genModel === 'pony') {
+      prefixTags.push('score_9, score_8_up, score_7_up, score_6_up, score_5_up, score_4_up');
+      
+      if (genRating === 'safe') prefixTags.push('rating_safe');
+      else if (genRating === 'sensitive') prefixTags.push('rating_questionable');
+      else prefixTags.push('rating_explicit');
+      
+      prefixTags.push('source_anime');
+      negative = 'score_6, score_5, score_4, worst quality, low quality, bad anatomy, blurry, watermarked, signature';
+    } 
+    else if (genModel === 'illustrious') {
+      if (genRating === 'safe') prefixTags.push('safe');
+      else if (genRating === 'sensitive') prefixTags.push('sensitive');
+      else if (genRating === 'nsfw') prefixTags.push('nsfw');
+      else prefixTags.push('explicit');
+
+      suffixTags.push('masterpiece, best quality, amazing quality, very aesthetic, absurdres');
+      negative = 'lowres, worst quality, bad quality, bad anatomy, bad proportions, blurry, sketch, censor, signature, watermark, artist name, artistic error, artistic failure';
+    } 
+    else {
+      if (genRating === 'safe') prefixTags.push('rating_safe');
+      else if (genRating === 'nsfw' || genRating === 'explicit') prefixTags.push('nsfw');
+      
+      suffixTags.push('masterpiece, best quality, high quality');
+      negative = 'worst quality, low quality, bad anatomy, bad hands, missing fingers, blurry, watermark, signature';
+    }
+
+    let userTagsList = [...selectedTags];
+
+    if (genModel === 'illustrious') {
+      const charAndCopyTags = userTagsList.filter(t => t.category === 'Character' || t.category === 'Copyright');
+      const otherTags = userTagsList.filter(t => t.category !== 'Character' && t.category !== 'Copyright');
+      userTagsList = [...charAndCopyTags, ...otherTags];
+    }
+
+    const userTagsFormatted = userTagsList.map(t => formatTag(t)).join(', ');
+
+    let positiveParts = [];
+    if (prefixTags.length > 0) {
+      positiveParts.push(prefixTags.join(', '));
+    }
+    if (customGenPrefix.trim()) {
+      positiveParts.push(customGenPrefix.trim());
+    }
+    if (userTagsFormatted) {
+      positiveParts.push(userTagsFormatted);
+    }
+    if (customGenSuffix.trim()) {
+      positiveParts.push(customGenSuffix.trim());
+    }
+    if (suffixTags.length > 0) {
+      positiveParts.push(suffixTags.join(', '));
+    }
+
+    positive = positiveParts.join(', ');
+    return { positive, negative };
+  };
 
   // Fetch scanned media data
   useEffect(() => {
@@ -343,6 +491,14 @@ function App() {
                   onClick={() => { setActiveTab('gallery'); setSelectedCategory('all'); }}
                 >
                   分类媒体库
+                </button>
+              </li>
+              <li>
+                <button 
+                  className={`nav-link-btn nav-link ${activeTab === 'generator' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('generator')}
+                >
+                  提示词生成器
                 </button>
               </li>
               <li>
@@ -745,6 +901,333 @@ function App() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* PROMPT GENERATOR TAB */}
+        {activeTab === 'generator' && (
+          <div className="generator-tab animate-fade-in">
+            {/* Header section */}
+            <div className="generator-header glass-panel">
+              <span className="hero-badge"><Sparkles size={14} /> Danbooru Prompt Engine</span>
+              <h2>Pony / Illustrious / Anime 提示词生成器</h2>
+              <p>
+                基于原 Pony 标签及 Danbooru 词库进行科学分类。选择目标模型和画面分级，一键拼接、调整权重，快速生成最适合的提示词组合。
+              </p>
+            </div>
+
+            {/* Model & Config settings */}
+            <div className="generator-config-bar glass-panel">
+              <div className="config-section">
+                <label className="config-label">1. 目标大模型风格</label>
+                <div className="model-presets-grid">
+                  <button 
+                    className={`model-preset-btn ${genModel === 'pony' ? 'active' : ''}`}
+                    onClick={() => { setGenModel('pony'); }}
+                  >
+                    <div className="preset-name">Pony Diffusion V6</div>
+                    <div className="preset-desc">基于 score 评分的前缀风格</div>
+                  </button>
+                  <button 
+                    className={`model-preset-btn ${genModel === 'illustrious' ? 'active' : ''}`}
+                    onClick={() => { setGenModel('illustrious'); }}
+                  >
+                    <div className="preset-name">Illustrious XL</div>
+                    <div className="preset-desc">角色/版权在前，画质修饰在后</div>
+                  </button>
+                  <button 
+                    className={`model-preset-btn ${genModel === 'anime' ? 'active' : ''}`}
+                    onClick={() => { setGenModel('anime'); }}
+                  >
+                    <div className="preset-name">Standard Anime</div>
+                    <div className="preset-desc">通用二次元 Danbooru 格式</div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="config-row-two">
+                <div className="config-section flex-1">
+                  <label className="config-label">2. 画面分级 (Rating)</label>
+                  <div className="rating-selector">
+                    <button className={`rating-btn safe ${genRating === 'safe' ? 'active' : ''}`} onClick={() => setGenRating('safe')}>Safe (全年龄)</button>
+                    <button className={`rating-btn sensitive ${genRating === 'sensitive' ? 'active' : ''}`} onClick={() => setGenRating('sensitive')}>Sensitive (微存)</button>
+                    <button className={`rating-btn nsfw ${genRating === 'nsfw' ? 'active' : ''}`} onClick={() => setGenRating('nsfw')}>NSFW (成人级)</button>
+                    <button className={`rating-btn explicit ${genRating === 'explicit' ? 'active' : ''}`} onClick={() => setGenRating('explicit')}>Explicit (露骨)</button>
+                  </div>
+                </div>
+
+                <div className="config-section">
+                  <label className="config-label">3. 搜索范围</label>
+                  <div className="search-scope-selector">
+                    <button 
+                      className={`scope-btn ${searchScope === 'global' ? 'active' : ''}`}
+                      onClick={() => setSearchScope('global')}
+                    >
+                      全局搜索
+                    </button>
+                    <button 
+                      className={`scope-btn ${searchScope === 'category' ? 'active' : ''}`}
+                      onClick={() => setSearchScope('category')}
+                    >
+                      当前分类
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main grid panels */}
+            <div className="generator-layout">
+              {/* Left Column: Categories and Tag selection */}
+              <div className="generator-tags-panel glass-panel">
+                <div className="generator-tags-selector">
+                  {/* Category sidebar list */}
+                  <div className="generator-categories-list">
+                    {tagDatabase ? Object.keys(tagDatabase).map(catKey => {
+                      const catData = tagDatabase[catKey];
+                      return (
+                        <button
+                          key={catKey}
+                          className={`category-item-btn ${selectedGenCategory === catKey ? 'active' : ''}`}
+                          onClick={() => setSelectedGenCategory(catKey)}
+                        >
+                          <span className="category-title">{catData.displayName}</span>
+                          <span className="category-count-label">{catData.tags.length}</span>
+                        </button>
+                      );
+                    }) : (
+                      <div className="loading-text">加载分类中...</div>
+                    )}
+                  </div>
+
+                  {/* Tag Grid and Search */}
+                  <div className="generator-tags-display">
+                    <div className="tags-search-header">
+                      <div className="search-box-wrapper">
+                        <Search size={16} className="search-icon" />
+                        <input 
+                          type="text" 
+                          placeholder={searchScope === 'global' ? "在全部 28 个分类中搜索标签..." : `在“${tagDatabase?.[selectedGenCategory]?.displayName || ''}”分类中搜索...`}
+                          className="search-input tag-search"
+                          value={genSearchQuery}
+                          onChange={(e) => setGenSearchQuery(e.target.value)}
+                        />
+                        {genSearchQuery && (
+                          <button className="clear-search-btn" onClick={() => setGenSearchQuery('')}>
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="tags-grid-container">
+                      {tagDatabase ? (
+                        (() => {
+                          let filteredTags = [];
+                          if (genSearchQuery.trim()) {
+                            const query = genSearchQuery.toLowerCase();
+                            if (searchScope === 'global') {
+                              Object.keys(tagDatabase).forEach(catKey => {
+                                tagDatabase[catKey].tags.forEach(tag => {
+                                  if (tag.toLowerCase().includes(query)) {
+                                    filteredTags.push({ raw: tag, category: catKey });
+                                  }
+                                });
+                              });
+                            } else {
+                              tagDatabase[selectedGenCategory].tags.forEach(tag => {
+                                if (tag.toLowerCase().includes(query)) {
+                                  filteredTags.push({ raw: tag, category: selectedGenCategory });
+                                }
+                              });
+                            }
+                          } else {
+                            filteredTags = tagDatabase[selectedGenCategory].tags.map(tag => ({ raw: tag, category: selectedGenCategory }));
+                          }
+
+                          const showLimit = genSearchQuery.trim() ? 500 : 150;
+                          const displayed = filteredTags.slice(0, showLimit);
+
+                          return (
+                            <>
+                              {filteredTags.length > showLimit && (
+                                <div className="tags-limit-info">
+                                  <span>显示前 {showLimit} 项（共 {filteredTags.length} 项符合条件），输入关键词搜索精确结果。</span>
+                                </div>
+                              )}
+                              {displayed.length === 0 ? (
+                                <div className="no-tags-found">
+                                  <span>没有找到匹配的标签</span>
+                                </div>
+                              ) : (
+                                <div className="tags-pills-grid">
+                                  {displayed.map((tagObj, idx) => {
+                                    const isSelected = selectedTags.some(t => t.raw === tagObj.raw);
+                                    const cleanName = parseTag(tagObj.raw).clean;
+                                    return (
+                                      <button
+                                        key={`${tagObj.raw}-${idx}`}
+                                        className={`tag-pill-btn ${isSelected ? 'selected' : ''}`}
+                                        onClick={() => handleToggleTag(tagObj.raw, tagObj.category)}
+                                        title={`${tagObj.raw} (${tagObj.category})`}
+                                      >
+                                        <span className="tag-pill-name">{cleanName}</span>
+                                        {isSelected && <span className="tag-pill-check">✓</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <div className="tags-loading">正在载入标签库，请稍候...</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Prompt Builder / Selected list / Prompt output */}
+              <div className="generator-builder-panel glass-panel">
+                <div className="builder-header">
+                  <h3>Prompt Builder (当前已选 {selectedTags.length} 个词)</h3>
+                  {selectedTags.length > 0 && (
+                    <button className="clear-all-tags-btn" onClick={() => setSelectedTags([])}>
+                      <Trash2 size={14} /> 清空已选
+                    </button>
+                  )}
+                </div>
+
+                {/* Selected Tags list with weights */}
+                <div className="builder-selected-tags">
+                  {selectedTags.length === 0 ? (
+                    <div className="empty-builder-message">
+                      <HelpCircle size={24} className="help-icon" />
+                      <p>左侧点击标签即可添加到此处。</p>
+                      <p className="sub-hint">您可以自定义模型及画面分级，在此调整权重和顺序。</p>
+                    </div>
+                  ) : (
+                    <div className="selected-chips-flow">
+                      {selectedTags.map((tagObj, idx) => {
+                        return (
+                          <div key={`${tagObj.raw}-${idx}`} className="selected-tag-chip">
+                            <span className="chip-category-label">{tagDatabase?.[tagObj.category]?.displayName || tagObj.category}</span>
+                            <span className="chip-name">{tagObj.clean}</span>
+                            
+                            <div className="weight-adjuster">
+                              <button 
+                                className="weight-btn minus" 
+                                onClick={() => handleAdjustWeight(tagObj.raw, -0.1)}
+                                title="减小权重 (-0.1)"
+                              >
+                                <Minus size={10} />
+                              </button>
+                              <span className="weight-val">{tagObj.weight.toFixed(1)}</span>
+                              <button 
+                                className="weight-btn plus" 
+                                onClick={() => handleAdjustWeight(tagObj.raw, 0.1)}
+                                title="增大权重 (+0.1)"
+                              >
+                                <Plus size={10} />
+                              </button>
+                            </div>
+
+                            <div className="order-adjuster">
+                              <button 
+                                className="order-btn" 
+                                disabled={idx === 0}
+                                onClick={() => {
+                                  const list = [...selectedTags];
+                                  const temp = list[idx];
+                                  list[idx] = list[idx - 1];
+                                  list[idx - 1] = temp;
+                                  setSelectedTags(list);
+                                }}
+                                title="向前移动"
+                              >
+                                ◀
+                              </button>
+                              <button 
+                                className="order-btn" 
+                                disabled={idx === selectedTags.length - 1}
+                                onClick={() => {
+                                  const list = [...selectedTags];
+                                  const temp = list[idx];
+                                  list[idx] = list[idx + 1];
+                                  list[idx + 1] = temp;
+                                  setSelectedTags(list);
+                                }}
+                                title="向后移动"
+                              >
+                                ▶
+                              </button>
+                            </div>
+
+                            <button 
+                              className="chip-delete-btn" 
+                              onClick={() => setSelectedTags(selectedTags.filter(t => t.raw !== tagObj.raw))}
+                              title="移除标签"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Live output boxes */}
+                <div className="builder-outputs">
+                  {(() => {
+                    const { positive, negative } = generatePrompts();
+                    return (
+                      <>
+                        <div className="prompt-output-box positive-output">
+                          <div className="output-header">
+                            <span className="output-label">Positive Prompt (正向提示词)</span>
+                            <button 
+                              className={`copy-btn ${copiedField === 'genPositive' ? 'copied' : ''}`}
+                              onClick={() => copyToClipboard(positive, 'genPositive', 'Positive prompt copied!')}
+                            >
+                              {copiedField === 'genPositive' ? <Check size={14} /> : <Copy size={14} />}
+                              <span>{copiedField === 'genPositive' ? '已复制' : '复制正向提示词'}</span>
+                            </button>
+                          </div>
+                          <textarea 
+                            className="output-textarea"
+                            value={positive}
+                            readOnly
+                            placeholder="生成的正向提示词将显示在这里..."
+                          />
+                        </div>
+
+                        <div className="prompt-output-box negative-output">
+                          <div className="output-header">
+                            <span className="output-label">Negative Prompt (负向提示词)</span>
+                            <button 
+                              className={`copy-btn ${copiedField === 'genNegative' ? 'copied' : ''}`}
+                              onClick={() => copyToClipboard(negative, 'genNegative', 'Negative prompt copied!')}
+                            >
+                              {copiedField === 'genNegative' ? <Check size={14} /> : <Copy size={14} />}
+                              <span>{copiedField === 'genNegative' ? '已复制' : '复制负向提示词'}</span>
+                            </button>
+                          </div>
+                          <textarea 
+                            className="output-textarea negative"
+                            value={negative}
+                            readOnly
+                            placeholder="生成的负向提示词将显示在这里..."
+                          />
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

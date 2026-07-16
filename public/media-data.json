@@ -1,5 +1,18 @@
 [
   {
+    "id": "audio-audio_ace-step_input",
+    "filename": "audio_ace-step_input.mp3",
+    "category": "audio",
+    "path": "/media/audio/audio_ace-step_input.mp3",
+    "type": "audio",
+    "size": "972.82 KB",
+    "rawSizeBytes": 996164,
+    "updatedAt": "2026-07-08T05:31:18.311Z",
+    "metadata": {
+      "hasMetadata": false
+    }
+  },
+  {
     "id": "cyberpunk-cyberpunk_street",
     "filename": "cyberpunk_street.jpg",
     "category": "cyberpunk",
@@ -461,6 +474,32 @@
     "size": "2.05 MB",
     "rawSizeBytes": 2151073,
     "updatedAt": "2026-07-08T00:30:10.407Z",
+    "metadata": {
+      "hasMetadata": false
+    }
+  },
+  {
+    "id": "test2-00049-MiaoMiao_Harem__Am_2_5d_1_0-61284383",
+    "filename": "00049-MiaoMiao Harem _Am_2.5d_1.0-61284383.png",
+    "category": "test2",
+    "path": "/media/test2/00049-MiaoMiao Harem _Am_2.5d_1.0-61284383.png",
+    "type": "image",
+    "size": "2.05 MB",
+    "rawSizeBytes": 2151073,
+    "updatedAt": "2026-07-08T00:30:10.407Z",
+    "metadata": {
+      "hasMetadata": false
+    }
+  },
+  {
+    "id": "vedio-wan_2_2_14B_t2v",
+    "filename": "wan_2_2_14B_t2v.mp4",
+    "category": "vedio",
+    "path": "/media/vedio/wan_2_2_14B_t2v.mp4",
+    "type": "video",
+    "size": "921.88 KB",
+    "rawSizeBytes": 944006,
+    "updatedAt": "2026-07-08T05:32:43.669Z",
     "metadata": {
       "hasMetadata": false
     }

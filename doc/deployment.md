@@ -18,15 +18,20 @@
 npm install
 ```
 
-### 2.2 扫描本地图片并测试
+### 2.2 扫描本地图片与提示词词库
 在启动调试前，确保您已将至少一个 ComfyUI 生成媒体放置于 `public/media/` 的分类文件夹中，然后执行：
 ```bash
-# 扫描元数据
+# 扫描媒体元数据并编译标签库
 npm run scan
 
 # 启动 Vite 本地开发服务器
 npm run dev
 ```
+> [!NOTE]
+> `npm run scan` 执行了两个操作：一是通过 `scan-media.js` 解析媒体元数据生成 `public/media-data.json`；二是通过 `build-tags.js` 读取 `tag/Data/` 目录下的提示词文本，排重汇总后生成 `public/tag-data.json` 用于前台“提示词生成器”使用。
+> 若只需单独重新编译提示词库，可以直接运行：
+> `node build-tags.js`
+
 打开浏览器访问控制台显示的本地地址即可预览网站效果。
 
 ---
@@ -40,7 +45,8 @@ npm run build
 编译完成后，项目根目录下会生成一个 `dist/` 文件夹。该文件夹包含了网站运行所需的全部纯静态文件：
 - `dist/index.html` (主入口)
 - `dist/assets/` (合并压缩后的 JS 和 CSS 代码)
-- `dist/media-data.json` (被提取的元数据 JSON 库)
+- `dist/media-data.json` (被提取的媒体元数据 JSON 库)
+- `dist/tag-data.json` (被汇总提取的提示词标签 JSON 库)
 - `dist/media/` (原始分类媒体目录)
 
 ---
@@ -70,7 +76,7 @@ npm run build
        }
 
        # 对元数据 JSON 禁用强缓存，防止媒体更新后前台不刷新
-       location = /media-data.json {
+       location ~* /(media-data|tag-data)\.json$ {
            add_header Cache-Control "no-cache, no-store, must-revalidate";
            expires 0;
        }
