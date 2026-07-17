@@ -282,6 +282,12 @@ const vocab = {
   // Season extra words
   "early": "初", "late": "深",
 
+  // Weather extra words
+  "weather": "天气", "sultry": "闷热", "hypothermia": "失温", "hyperthermia": "高温", "risk": "风险",
+  "rime": "雾凇", "ice": "冰", "lake": "湖泊", "effect": "效应", "snow": "雪", "polar": "极地",
+  "vortex": "涡旋", "flash": "山洪/突发", "flood": "洪水", "rip": "裂/裂流", "current": "流/水流",
+  "high": "高", "low": "低", "tide": "潮/潮汐", "tsunami": "海啸", "wave": "波浪",
+
   // Nationalities
   "african": "非洲", "american": "美国", "albanian": "阿尔巴尼亚", "algerian": "阿尔及利亚",
   "andorran": "安道尔", "angolan": "安格拉", "argentinian": "阿根廷", "armenian": "亚美尼亚",
@@ -459,15 +465,20 @@ async function buildTags() {
       // 4. Try word-by-word translate if contains underscores
       if (clean.includes('_')) {
         const words = clean.split('_').filter(w => w.length > 0);
+        const hasPattern = (words.includes('sitting') && words.includes('on')) ||
+                           (words.includes('standing') && words.includes('on')) ||
+                           (words.includes('looking') && words.includes('at')) ||
+                           (words.includes('holding') && words.includes('a')) ||
+                           words.includes('holding');
+
         const translatedWords = words.map(w => {
           const t = getShortTranslation(w);
           if (t) return t;
           if (/^[0-9]+$/.test(w)) return w;
           return null;
         });
-        
-        // If all words are translated, combine them!
-        if (translatedWords.every(tw => tw !== null)) {
+
+        if (hasPattern && translatedWords.every(tw => tw !== null)) {
           if (words.includes('sitting') && words.includes('on')) {
             const index = words.indexOf('on');
             const target = translatedWords.slice(index + 1).join('');
@@ -493,8 +504,36 @@ async function buildTags() {
             const target = translatedWords.slice(index + 1).join('');
             return `拿着${target}`;
           }
+        }
+
+        // Fallback: translate only the recognized words, keep unrecognized ones in English, format with spaces
+        const translatedCount = translatedWords.filter(tw => tw !== null).length;
+        if (translatedCount > 0) {
+          const mixedWords = words.map((w, idx) => {
+            if (translatedWords[idx] !== null) {
+              return translatedWords[idx];
+            }
+            return w;
+          });
           
-          let result = translatedWords.join('');
+          let result = '';
+          for (let i = 0; i < mixedWords.length; i++) {
+            const current = mixedWords[i];
+            const isChinese = /[\u4e00-\u9fa5]/.test(current);
+            if (i > 0) {
+              const prev = mixedWords[i - 1];
+              const prevIsChinese = /[\u4e00-\u9fa5]/.test(prev);
+              if (!prevIsChinese || !isChinese) {
+                result += ' ' + current;
+              } else {
+                result += current;
+              }
+            } else {
+              result += current;
+            }
+          }
+          
+          result = result.trim();
           result = result.replace(/色发$/, '发');
           result = result.replace(/色眼$/, '眼');
           result = result.replace(/色皮肤$/, '色皮肤');
@@ -502,6 +541,13 @@ async function buildTags() {
           return result;
         }
       }
+
+      // 5. If it's a single word and we have a vocab translation, use it!
+      const singleTrans = getShortTranslation(clean);
+      if (singleTrans) {
+        return singleTrans;
+      }
+
       return null;
     };
 
