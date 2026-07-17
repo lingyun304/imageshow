@@ -398,6 +398,71 @@ async function buildTags() {
       }
     }
 
+    // Helper to format string into Title Case (Capitalize words, preserve parenthesized tags)
+    const formatTitleCase = (str) => {
+      if (!str) return '';
+      return str
+        .split('_')
+        .map(word => {
+          if (word.startsWith('(') && word.endsWith(')')) {
+            const inner = word.substring(1, word.length - 1);
+            return '(' + inner.charAt(0).toUpperCase() + inner.slice(1) + ')';
+          }
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(' ');
+    };
+
+    const popularTranslations = {
+      // Artists
+      "kantoku": "监督",
+      "wlop": "WLOP",
+      "mika_pikazo": "Mika Pikazo",
+      "ixy": "Ixy",
+      "shinkai_makoto": "新海诚",
+      "miyazaki_hayao": "宫崎骏",
+      "tony_taka": "Tony Taka",
+      "fuzichoco": "藤原",
+      "ask": "Ask",
+      "artgerm": "Artgerm",
+      "alphonse_mucha": "阿尔丰斯·慕夏",
+      "greg_rutkowski": "格雷格·鲁特科夫斯基",
+      "claude_monet": "克劳德·莫奈",
+      "vincent_van_gogh": "文森特·梵高",
+      "picasso": "毕加索",
+      "leonardo_da_vinci": "列奥纳多·达·芬奇",
+      "hokusai": "葛饰北斋",
+
+      // Copyrights (IPs)
+      "genshin_impact": "原神",
+      "arknights": "明日方舟",
+      "azur_lane": "碧蓝航线",
+      "fate_grand_order": "命运-冠位指定 (FGO)",
+      "fate_stay_night": "命运守护夜 (FSN)",
+      "league_of_legends": "英雄联盟 (LOL)",
+      "honkai_star_rail": "崩坏：星穹铁道",
+      "honkai_impact_3rd": "崩坏3",
+      "blue_archive": "蓝色档案",
+      "neon_genesis_evangelion": "新世纪福音战士 (EVA)",
+      "sailor_moon": "美少女战士",
+      "pokemon": "宝可梦",
+      "cardcaptor_sakura": "魔卡少女樱",
+      "vocaloid": "Vocaloid",
+      "touhou_project": "东方Project",
+      "chainsaw_man": "电锯人",
+      "demons_layer": "鬼灭之刃",
+      "jujutsu_kaisen": "咒术回战",
+      "my_hero_academia": "我的英雄学院",
+      "one_piece": "航海王/海贼王",
+      "naruto": "火影忍者",
+      "dragon_ball": "龙珠",
+      "bleach": "死神",
+      "attack_on_titan": "进击的巨人",
+      "cyberpunk_edgerunners": "赛博朋克：边缘跑手",
+      "k-on!": "轻音少女",
+      "monogatari_series": "物语系列"
+    };
+
     // Helper to extract short, clean translation from vocab or static map
     const getShortTranslation = (word) => {
       if (!word) return null;
@@ -414,8 +479,19 @@ async function buildTags() {
     };
 
     // Advanced translation engine combining static, rules, and splits
-    const translateTag = (rawTag) => {
+    const translateTag = (rawTag, category = '') => {
       const clean = parseTag(rawTag);
+
+      // Special handling for Artist and Copyright
+      if (category === 'Artist' || category === 'Copyright') {
+        if (popularTranslations[clean]) {
+          return `${popularTranslations[clean]} (${formatTitleCase(clean)})`;
+        }
+        if (staticMap[clean]) {
+          return `${staticMap[clean]} (${formatTitleCase(clean)})`;
+        }
+        return formatTitleCase(clean);
+      }
       
       // 1. Direct match in static map
       if (staticMap[clean]) {
@@ -559,6 +635,7 @@ async function buildTags() {
       const stat = fs.statSync(filePath);
       
       if (stat.isFile()) {
+        const categoryName = file;
         const content = fs.readFileSync(filePath, 'utf-8');
         const lines = content.split(/\r?\n/);
         const tags = [];
@@ -571,7 +648,7 @@ async function buildTags() {
           if (!seen.has(line)) {
             seen.add(line);
             const clean = parseTag(line);
-            const zh = translateTag(line);
+            const zh = translateTag(line, categoryName);
             
             // If we have a translation that is different from the english text
             if (zh && zh.toLowerCase() !== clean) {
@@ -582,7 +659,6 @@ async function buildTags() {
           }
         }
 
-        const categoryName = file;
         const displayName = categoryTranslations[categoryName] || categoryName;
         result[categoryName] = {
           displayName,
