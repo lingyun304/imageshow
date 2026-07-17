@@ -406,6 +406,18 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(16, 185, 129, 0.08);
 }
 
+.category-video, .category-vedio {
+  color: var(--accent-rose);
+  border-color: rgba(244, 63, 94, 0.3);
+  background: rgba(244, 63, 94, 0.08);
+}
+
+.category-audio {
+  color: var(--accent-amber);
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.08);
+}
+
 /* Code Viewer styling */
 pre {
   background: rgba(0, 0, 0, 0.4) !important;

@@ -88,6 +88,35 @@ const AI_LIGHTINGS = [
   { id: 'backlight', name: '逆光轮廓', nameEn: 'Rim Backlighting', prompt: 'strong backlighting, glowing rim light outlining the edges, high silhouette contrast' }
 ];
 
+// Media category translation dictionary for displaying both Chinese and English
+const mediaCategoryTranslations = {
+  all: { zh: '全部媒体', en: 'All' },
+  cyberpunk: { zh: '赛博朋克', en: 'Cyberpunk' },
+  fantasy: { zh: '奇幻', en: 'Fantasy' },
+  nature: { zh: '自然', en: 'Nature' },
+  vedio: { zh: '视频', en: 'Video' },
+  video: { zh: '视频', en: 'Video' },
+  audio: { zh: '音频', en: 'Audio' },
+  test: { zh: '测试', en: 'Test' },
+  test2: { zh: '测试2', en: 'Test 2' },
+  uncategorized: { zh: '未分类', en: 'Uncategorized' }
+};
+
+// Helper to get bilingual category name
+function getMediaCategoryDisplayName(cat) {
+  if (!cat) return '';
+  const normalized = cat.toLowerCase();
+  if (mediaCategoryTranslations[normalized]) {
+    return `${mediaCategoryTranslations[normalized].zh} (${mediaCategoryTranslations[normalized].en})`;
+  }
+  const isChinese = /[\u4e00-\u9fa5]/.test(cat);
+  if (isChinese) {
+    return cat;
+  }
+  const enName = cat.charAt(0).toUpperCase() + cat.slice(1);
+  return enName;
+}
+
 function App() {
   // Theme state
   const [theme, setTheme] = useState(() => {
@@ -1777,7 +1806,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       >
                         <div className="cat-preview-content">
                           <Folder className="cat-icon" size={24} />
-                          <h3>{cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>
+                          <h3>{getMediaCategoryDisplayName(cat)}</h3>
                           <span className="cat-count">{catImages.length} 个媒体</span>
                         </div>
                       </div>
@@ -1894,7 +1923,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     onClick={() => setSelectedCategory(cat)}
                     className={`category-tab-btn ${selectedCategory === cat ? 'active' : ''}`}
                   >
-                    {cat === 'all' ? '全部媒体' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    {getMediaCategoryDisplayName(cat)}
                     <span className="tab-count-badge">
                       {cat === 'all' 
                         ? images.length 
@@ -1991,8 +2020,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     </div>
                     <div className="image-card-info">
                       <div className="card-title-row">
-                        <span className={`category-badge category-${img.category}`}>
-                          {img.category}
+                        <span className={`category-badge category-${img.category.toLowerCase()}`}>
+                          {getMediaCategoryDisplayName(img.category)}
                         </span>
                         <span className="card-size-label">{img.size}</span>
                       </div>
@@ -2142,7 +2171,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                           className={`category-item-btn ${selectedGenCategory === catKey ? 'active' : ''}`}
                           onClick={() => setSelectedGenCategory(catKey)}
                         >
-                          <span className="category-title">{catData.displayName}</span>
+                          <span className="category-title">{catData.displayName} ({catKey})</span>
                           <span className="category-count-label">{catData.tags.length}</span>
                         </button>
                       );
@@ -2158,7 +2187,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                         <Search size={16} className="search-icon" />
                         <input 
                           type="text" 
-                          placeholder={searchScope === 'global' ? "在全部 28 个分类中搜索标签..." : `在“${tagDatabase?.[selectedGenCategory]?.displayName || ''}”分类中搜索...`}
+                          placeholder={searchScope === 'global' ? "在全部 28 个分类中搜索标签..." : `在“${tagDatabase?.[selectedGenCategory] ? `${tagDatabase[selectedGenCategory].displayName} (${selectedGenCategory})` : ''}”分类中搜索...`}
                           className="search-input tag-search"
                           value={genSearchQuery}
                           onChange={(e) => setGenSearchQuery(e.target.value)}
@@ -2273,7 +2302,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       {selectedTags.map((tagObj, idx) => {
                         return (
                           <div key={`${tagObj.raw}-${idx}`} className="selected-tag-chip">
-                            <span className="chip-category-label">{tagDatabase?.[tagObj.category]?.displayName || tagObj.category}</span>
+                            <span className="chip-category-label">{tagDatabase?.[tagObj.category] ? `${tagDatabase[tagObj.category].displayName} (${tagObj.category})` : tagObj.category}</span>
                             <span className="chip-name">{tagObj.zh ? `${tagObj.clean} (${tagObj.zh})` : tagObj.clean}</span>
                             
                             <div className="weight-adjuster">
@@ -2849,8 +2878,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   )}
                 </div>
                 <div className="modal-image-actions">
-                  <span className={`category-badge category-${selectedImage.category}`}>
-                    {selectedImage.category}
+                  <span className={`category-badge category-${selectedImage.category.toLowerCase()}`}>
+                    {getMediaCategoryDisplayName(selectedImage.category)}
                   </span>
                   <div className="action-buttons-group">
                     <button 
