@@ -2807,3 +2807,26 @@ html.dynamic-anime .ai-generate-submit-btn:hover:not(:disabled) {
   100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
 }
 
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.text-link-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition-fast);
+  padding: 0;
+}
+
+.text-link-btn:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+

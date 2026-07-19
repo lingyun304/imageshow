@@ -220,6 +220,39 @@ function App() {
     }
   };
 
+  // Fetch loaded models from the API endpoint
+  const handleFetchLoadedModels = async () => {
+    if (!llmApiUrl) {
+      showToast('请先输入 API 接口地址！', 'error');
+      return;
+    }
+    try {
+      showToast('正在从接口获取可用模型列表...', 'info');
+      const response = await fetch(`${llmApiUrl}/models`, {
+        method: 'GET',
+        headers: {
+          ...(llmApiKey ? { 'Authorization': `Bearer ${llmApiKey}` } : {})
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          const modelIds = data.data.map(m => m.id);
+          // Set the first available model as the selected model
+          setLlmModel(modelIds[0]);
+          showToast(`已成功自动获取并加载模型: ${modelIds[0]}`, 'success');
+        } else {
+          showToast('未在接口端检测到已加载的模型，请确保大模型已启用。', 'warning');
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('获取模型列表失败，请检查地址是否正确或是否存在跨域限制。', 'error');
+    }
+  };
+
   // Generate Creative Natural Language Prompt via LLM
   const handleGenerateAIPrompt = async () => {
     if (!aiUserIdea.trim()) {
@@ -258,6 +291,19 @@ Style theme: ${styleObj ? styleObj.prompt : ''}
 Composition: ${compObj ? compObj.prompt : ''}
 Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
+    const messages = [];
+    if (llmPreset === 'openai' || llmPreset === 'deepseek') {
+      messages.push({ role: 'system', content: systemPrompt });
+      messages.push({ role: 'user', content: userPrompt });
+    } else {
+      // Local models (Ollama, LM Studio, custom) might not support 'system' role.
+      // We combine system instructions and user parameters into a single user message.
+      messages.push({
+        role: 'user',
+        content: `${systemPrompt}\n\n[Instruction]: Generate the detailed prompt based on the following parameters:\n${userPrompt}`
+      });
+    }
+
     try {
       const response = await fetch(`${llmApiUrl}/chat/completions`, {
         method: 'POST',
@@ -267,10 +313,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
         },
         body: JSON.stringify({
           model: llmModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
+          messages,
           temperature: 0.7
         })
       });
@@ -2404,7 +2447,16 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       />
                     </div>
                     <div className="input-group">
-                      <label className="field-label">模型名称 (Model Name)</label>
+                      <div className="label-row">
+                        <label className="field-label">模型名称 (Model Name)</label>
+                        <button 
+                          className="text-link-btn" 
+                          onClick={handleFetchLoadedModels} 
+                          title="自动从服务商接口拉取当前已加载的模型名称"
+                        >
+                          自动获取已加载模型
+                        </button>
+                      </div>
                       <input 
                         type="text" 
                         value={llmModel} 
