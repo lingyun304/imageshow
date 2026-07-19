@@ -146,7 +146,7 @@ function App() {
   const [llmApiKey, setLlmApiKey] = useState(() => localStorage.getItem('llmApiKey') || '');
   const [llmModel, setLlmModel] = useState(() => localStorage.getItem('llmModel') || 'llama3:latest');
   const [llmPreset, setLlmPreset] = useState('ollama'); // 'ollama', 'deepseek', 'openai', 'custom'
-  const [aiUserIdea, setAiUserIdea] = useState('');
+  const [aiUserIdea, setAiUserIdea] = useState('一个戴着发光耳机和未来护目镜的少女，独自坐在赛博朋克雨夜街头小吃摊前吃拉面，背景是层叠的霓虹灯牌与高科技摩天大楼。');
   const [aiSelectedStyle, setAiSelectedStyle] = useState('cyberpunk');
   const [aiSelectedComposition, setAiSelectedComposition] = useState('close-up');
   const [aiSelectedLighting, setAiSelectedLighting] = useState('neon');
@@ -2443,7 +2443,22 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       <button 
                         key={style.id}
                         className={`ai-style-card ${aiSelectedStyle === style.id ? 'active' : ''}`}
-                        onClick={() => setAiSelectedStyle(style.id)}
+                        onClick={() => {
+                          setAiSelectedStyle(style.id);
+                          const defaultIdeas = {
+                            cyberpunk: '一个戴着发光耳机和未来护目镜的少女，独自坐在赛博朋克雨夜街头小吃摊前吃拉面，背景是层叠的霓虹灯牌与高科技摩天大楼。',
+                            anime: '一个金色双马尾的魔法少女，手握散发着璀璨光芒的魔杖，站在满天繁星的夜空之下，周围环绕着漂浮的魔法符文。',
+                            realistic: '一个饱经沧桑的老人面部特写，逆光照亮了他脸上的皱纹，眼神深邃而故事感十足，包含清晰的毛孔与毛发细节。',
+                            fantasy: '一头巨大的独角兽在发光的荧光森林湖畔饮水，湖水倒映着天空中粉蓝色的星云，周围是漂浮的发光水母与奇异植物。',
+                            cinematic: '一名身穿黑色风衣的神秘侦探在阴雨连绵的伦敦深夜街头漫步，路灯昏暗，路面积水倒映着远处红色双层巴士的虚影。',
+                            watercolor: '一只可爱的橘猫静静地躺在洒满阳光的窗台睡懒觉，窗外是盛开的粉色樱花，画面具有手绘水彩渲染的透明感。',
+                            oilpainting: '一个优雅的贵妇人在烛光摇曳的巴洛克书房中阅读一封古老的信件，身上是华丽的丝绸长裙，光影具有伦勃朗式的明暗对比。',
+                            '3drender': '一个圆滚滚的粘土材质小宇航员，骑着一只粉红色的太空飞猪，在布满糖果色星球的宇宙中漫游，具有可爱的Chibi 3D粘土风格。',
+                            chinese: '一个身穿白色汉服的剑客，负手伫立在云雾缭绕的险峻山巅之上，周围是苍劲的古松，远山在水墨留白中若隐若现。',
+                            steampunk: '一个巨大的黄铜飞艇悬浮在维多利亚时代的机械都市上空，都市中耸立着巨大的齿轮塔与吐着白烟的铜制管道，复古感十足。'
+                          };
+                          setAiUserIdea(defaultIdeas[style.id] || '');
+                        }}
                       >
                         <div className="style-name">{style.name}</div>
                         <div className="style-name-en">{style.nameEn}</div>
