@@ -8,7 +8,7 @@
 
 ## 2. 系统技术架构
 为了实现无后端的全静态运行并支持本地文件同步，系统采用以下架构：
-- **静态资源扫描器 (Build-time CLI):** 使用 Node.js 编写的 `scan-media.js` 脚本。运行时扫描本地 `/public/media/`，解析 PNG (`tEXt`/`iTXt`) 或 WebP (`XMP`) 二进制数据块中的 ComfyUI 提示词数据，并提取侧边栏 `.json` 文件作为兼容格式。生成最终的 `/public/media-data.json` 索引文件。
+- **静态资源扫描器 (Build-time CLI):** 使用 Node.js 编写的 `scan-media.js` 脚本。运行时扫描本地 `/public/media/`（该文件夹可作为指向本地其他任意媒体输出目录的软链接/快捷方式），解析 PNG (`tEXt`/`iTXt`) 或 WebP (`XMP`) 二进制数据块中的 ComfyUI 提示词数据，并提取侧边栏 `.json` 文件作为兼容格式。生成最终的 `/public/media-data.json` 索引文件。
 - **现代化前端展现层 (React Single Page App):** 采用 React 19 + Vite 8 + Vanilla CSS 构建，纯静态展示，通过 `fetch()` 读取扫描生成的 JSON 数据库。
 - **UI/UX 设计语言:** 支持三套独立的视觉系统一键无缝切换：默认的【科技暗黑 (Cyber Dark)】、亮色温暖且具有春意感的【清新雅致 (Fresh Mint)】、以及搭载了动感渐变背景与丰富微交互的【炫酷动感 (Dynamic Anime)】。三套主题均融入了高品质玻璃态拟物化 (Glassmorphic) 模块、响应式瀑布流 (Masonry Grid) 和顺滑的过渡动画，提供极佳的感官体验。
 
@@ -77,6 +77,9 @@
   - **移动排序:** 支持点击“向前/向后”移动调整标签在整个提示词中的顺序。
   - **实时预览与一键复制:** 实时生成并展现 Positive (正向) 与 Negative (负向) 提示词，支持一键独立复制并提供 Toast 视觉反馈。
 - **中文本地化翻译与中英文双向搜索 (Chinese Translation & Bilingual Search):**
-  - **混合翻译引擎:** 扫描构建时结合了 static 翻译字典（`byzod/a1111-sd-webui-tagcomplete-CN`）和基于常见词汇表（`vocab`）下划线切分的词组翻译算法。新增对年龄后缀（如 `12_years_old` -> `12岁`）与 20 种特定分类后缀（如 `_theme` 主题、`_animal` 动物、`_creature` 生物、`_environment` 环境、`_lighting` 光照、`_tattoo` 纹身、`_style` 风格等）的规则匹配，智能解析前缀并拼接对应分类中文，同时扩充了视角、面料、国籍、年龄等维度的专有基词字典，显著提高专业画风与特定领域标签的本地化翻译覆盖度。
+  - **混合翻译引擎:** 扫描构建时结合了 static 翻译字典（`byzod/a1111-sd-webui-tagcomplete-CN`）和基于常见词汇表（`vocab`）下划线切分的词组翻译算法。新增对年龄后缀（如 `12_years_old` -> `12岁`）与 20 种特定分类后缀（如 `_theme` 主题、`_animal` 动物、`_creature` 生物、`_environment` 环境、`_lighting` 光照、`_tattoo` 纹身、`_style` 风格等）的规则匹配，智能解析前缀并拼接对应分类中文，同时扩充了视角、面料、国籍、年龄等维度的专有基词字典，显著提高专业画风与特定领域标签 of 本地化翻译覆盖度。
   - **双语混合检索:** 检索栏同时匹配英文标签原词与其中文翻译，支持输入中文、英文或首字母模糊搜索。
   - **可视化中文对照:** 标签胶囊及已选列表中直观显示中文对照译名（形如 `long_hair (长发)`），方便直观对比与权重调整。
+- **智能灵感与多风格随机推荐 (Smart Inspiration & Style Recommendation):**
+  - **风格分类:** 支持 12 种预设生成风格的随机推荐 (🎲 随机任意风格、🌸 日系动漫、📸 写实人像、🌃 赛博朋克、🔮 奇幻魔法、🎋 国风华服、🚀 科幻太空、🍃 清新田园、👥 多人合照、⛓️ 束缚调教、🎭 隐奸推荐、🔞 羞羞推荐)。
+  - **多风格过滤规则:** 针对每种风格定义专属的强关联标签作为底座（如赛博朋克的 neon lights, cyberpunk 等），并引入排除黑名单（如多人合照排除 `1boy`，日系二次元排除写实词等）和特异的 Nudity (暴露度) 级联展开逻辑，全自动为 Prompt Builder 点选并组装高质量的风格词，一键赋能激发 AI 绘图灵感。
