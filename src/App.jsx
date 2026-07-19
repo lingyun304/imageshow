@@ -30,7 +30,9 @@ import {
   Trash2,
   HelpCircle,
   RefreshCw,
-  Shuffle
+  Shuffle,
+  Settings,
+  AlertCircle
 } from 'lucide-react';
 import './App.css';
 import { scanLocalDirectory } from './utils/metadataParser';
@@ -54,6 +56,37 @@ function parseTag(rawTag) {
   }
   return { clean, weight };
 }
+
+const AI_STYLES = [
+  { id: 'cyberpunk', name: '赛博朋克', nameEn: 'Cyberpunk', prompt: 'cyberpunk style, high-tech low-life, neon glowing lights, holographic displays, futuristic urban street, metallic surfaces' },
+  { id: 'anime', name: '日系动漫', nameEn: 'Dynamic Anime', prompt: 'modern anime style, vibrant colors, expressive eyes, line art, cel-shading, high aesthetic value, masterpiece' },
+  { id: 'realistic', name: '写实人像', nameEn: 'Realistic Portrait', prompt: 'hyper-realistic photo, 8k resolution, detailed skin texture, raw photo, captured with DSLR, natural skin pores, photographic masterpiece' },
+  { id: 'fantasy', name: '魔法奇幻', nameEn: 'Fantasy Magic', prompt: 'fantasy world, magic elements, glowing particles, mystical forest, ethereal atmosphere, ancient ruins, legendary scenery' },
+  { id: 'cinematic', name: '电影质感', nameEn: 'Cinematic', prompt: 'cinematic shot, 35mm lens, depth of field, dramatic shadows, highly atmospheric, movie poster quality, color graded' },
+  { id: 'watercolor', name: '水彩手绘', nameEn: 'Watercolor Art', prompt: 'watercolor painting, soft color washes, hand-drawn paper texture, artistic brush strokes, splashes, gentle aesthetic' },
+  { id: 'oilpainting', name: '古典油画', nameEn: 'Classical Oil Painting', prompt: 'classical oil painting style, visible heavy brush strokes, rich texture, chiaroscuro lighting, baroque atmosphere, masterwork canvas' },
+  { id: '3drender', name: '3D C4D渲染', nameEn: '3D C4D Render', prompt: '3d render, octane render, cinema 4d style, clay material, cute chibi design, bright ambient occlusion, smooth surfaces' },
+  { id: 'chinese', name: '国风水墨', nameEn: 'Chinese Ink Wash', prompt: 'traditional chinese ink wash painting style, guofeng, elegant brush strokes, minimalist composition, misty mountain landscape, calligraphic lines' },
+  { id: 'steampunk', name: '蒸汽朋克', nameEn: 'Steampunk', prompt: 'steampunk style, brass gears, copper pipes, smoke and steam, Victorian clothing, mechanical details, sepia tone accents' }
+];
+
+const AI_COMPOSITIONS = [
+  { id: 'close-up', name: '电影特写', nameEn: 'Close-up Shot', prompt: 'close-up portrait, focusing on details and expressions, blurry background' },
+  { id: 'medium', name: '中景半身', nameEn: 'Medium Shot', prompt: 'medium shot, showing upper body and surrounding context' },
+  { id: 'full-body', name: '全身立绘', nameEn: 'Full Body Shot', prompt: 'full body shot, showing complete character pose and details' },
+  { id: 'wide-angle', name: '宏大远景', nameEn: 'Wide Angle', prompt: 'wide-angle view, expansive scenery, scale and environment context' },
+  { id: 'low-angle', name: '仰视透视', nameEn: 'Low Angle', prompt: 'low angle view, looking up, imposing and dynamic perspective' },
+  { id: 'high-angle', name: '俯视构图', nameEn: 'High Angle', prompt: 'high angle shot, bird\'s-eye view, structural composition' }
+];
+
+const AI_LIGHTINGS = [
+  { id: 'neon', name: '霓虹冷色', nameEn: 'Neon Glowing', prompt: 'vibrant neon cyberpunk lighting, cold blue and pink lights, high contrast shadows' },
+  { id: 'volumetric', name: '体积光', nameEn: 'Volumetric Light', prompt: 'dramatic volumetric light rays, dust particles visible, sunset rays breaking through, atmospheric haze' },
+  { id: 'studio', name: '棚拍布光', nameEn: 'Studio Lighting', prompt: 'soft studio lighting, 3-point light setup, key light, fill light, clean studio backdrop' },
+  { id: 'golden-hour', name: '黄金时刻', nameEn: 'Golden Hour', prompt: 'warm golden hour light, soft orange sunset glow, long warm shadows, cinematic backlight' },
+  { id: 'dark-moody', name: '阴郁暗光', nameEn: 'Dark & Moody', prompt: 'low-key lighting, deep shadows, moody ambiance, mysterious atmosphere' },
+  { id: 'backlight', name: '逆光轮廓', nameEn: 'Rim Backlighting', prompt: 'strong backlighting, glowing rim light outlining the edges, high silhouette contrast' }
+];
 
 function App() {
   // Theme state
@@ -107,6 +140,199 @@ function App() {
   const [customGenSuffix, setCustomGenSuffix] = useState('');
   const [searchScope, setSearchScope] = useState('global'); // 'global' or 'category'
   const [activeRandomStyle, setActiveRandomStyle] = useState(null);
+
+  // AI Prompt Master States
+  const [llmApiUrl, setLlmApiUrl] = useState(() => localStorage.getItem('llmApiUrl') || 'http://localhost:11434/v1');
+  const [llmApiKey, setLlmApiKey] = useState(() => localStorage.getItem('llmApiKey') || '');
+  const [llmModel, setLlmModel] = useState(() => localStorage.getItem('llmModel') || 'llama3:latest');
+  const [llmPreset, setLlmPreset] = useState('ollama'); // 'ollama', 'deepseek', 'openai', 'custom'
+  const [aiUserIdea, setAiUserIdea] = useState('');
+  const [aiSelectedStyle, setAiSelectedStyle] = useState('cyberpunk');
+  const [aiSelectedComposition, setAiSelectedComposition] = useState('close-up');
+  const [aiSelectedLighting, setAiSelectedLighting] = useState('neon');
+  const [aiResultPrompt, setAiResultPrompt] = useState('');
+  const [aiResultTranslation, setAiResultTranslation] = useState('');
+  const [aiIsGenerating, setAiIsGenerating] = useState(false);
+  const [aiConnectionTest, setAiConnectionTest] = useState('idle'); // 'idle', 'testing', 'success', 'error'
+  const [aiConnectionError, setAiConnectionError] = useState('');
+  const [showLlmSettings, setShowLlmSettings] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('llmApiUrl', llmApiUrl);
+  }, [llmApiUrl]);
+  useEffect(() => {
+    localStorage.setItem('llmApiKey', llmApiKey);
+  }, [llmApiKey]);
+  useEffect(() => {
+    localStorage.setItem('llmModel', llmModel);
+  }, [llmModel]);
+
+  // Switch preset configurations
+  const handleLlmPresetChange = (preset) => {
+    setLlmPreset(preset);
+    if (preset === 'ollama') {
+      setLlmApiUrl('http://localhost:11434/v1');
+      setLlmModel('llama3:latest');
+    } else if (preset === 'deepseek') {
+      setLlmApiUrl('https://api.deepseek.com/v1');
+      setLlmModel('deepseek-chat');
+    } else if (preset === 'openai') {
+      setLlmApiUrl('https://api.openai.com/v1');
+      setLlmModel('gpt-4o-mini');
+    }
+  };
+
+  // Test Connection
+  const testLlmConnection = async () => {
+    if (!llmApiUrl) {
+      showToast('请输入 API 接口地址！', 'error');
+      return;
+    }
+    setAiConnectionTest('testing');
+    setAiConnectionError('');
+    try {
+      const response = await fetch(`${llmApiUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(llmApiKey ? { 'Authorization': `Bearer ${llmApiKey}` } : {})
+        },
+        body: JSON.stringify({
+          model: llmModel,
+          messages: [
+            { role: 'user', content: 'ping' }
+          ],
+          max_tokens: 5
+        })
+      });
+      if (response.ok) {
+        setAiConnectionTest('success');
+        showToast('连接测试成功！模型可正常调用。', 'success');
+      } else {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+      }
+    } catch (err) {
+      console.error(err);
+      setAiConnectionTest('error');
+      setAiConnectionError(err.message);
+      showToast('连接测试失败！', 'error');
+    }
+  };
+
+  // Generate Creative Natural Language Prompt via LLM
+  const handleGenerateAIPrompt = async () => {
+    if (!aiUserIdea.trim()) {
+      showToast('请先输入您的创意脑洞描述！', 'error');
+      return;
+    }
+    if (!llmApiUrl) {
+      showToast('请在 API 设置中配置接口地址！', 'error');
+      setShowLlmSettings(true);
+      return;
+    }
+
+    setAiIsGenerating(true);
+    setAiResultPrompt('');
+    setAiResultTranslation('');
+
+    const styleObj = AI_STYLES.find(s => s.id === aiSelectedStyle);
+    const compObj = AI_COMPOSITIONS.find(c => c.id === aiSelectedComposition);
+    const lightObj = AI_LIGHTINGS.find(l => l.id === aiSelectedLighting);
+
+    const systemPrompt = `You are a professional AI image generation prompt specialist.
+Your task is to take the user's basic core idea, style, composition, and lighting preferences, and expand them into a highly detailed, descriptive, and creative natural language prompt in English, optimized for state-of-the-art text-to-image models (like Flux, Z-Image, SD3, Midjourney).
+
+Follow these rules:
+1. The expanded English prompt must be written as a single, coherent, descriptive paragraph of natural English prose (no comma-separated list of tags, but a description of the scene). Include rich sensory details, textures, composition elements, and lighting to make the image beautiful.
+2. Provide a natural, beautiful Chinese translation of the expanded prompt so the user can understand it.
+3. You must output the result strictly in the following JSON format:
+{
+  "prompt": "expanded English prompt here",
+  "translation": "Chinese translation here"
+}
+Do not include any markdown format tags (like \`\`\`json) or extra text outside the JSON. Return only the JSON string.`;
+
+    const userPrompt = `Core scene idea: ${aiUserIdea}
+Style theme: ${styleObj ? styleObj.prompt : ''}
+Composition: ${compObj ? compObj.prompt : ''}
+Lighting: ${lightObj ? lightObj.prompt : ''}`;
+
+    try {
+      const response = await fetch(`${llmApiUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(llmApiKey ? { 'Authorization': `Bearer ${llmApiKey}` } : {})
+        },
+        body: JSON.stringify({
+          model: llmModel,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (!data.choices || data.choices.length === 0 || !data.choices[0].message) {
+        throw new Error('API 返回的数据结构不正确，未检测到大模型回复内容。');
+      }
+
+      let content = data.choices[0].message.content.trim();
+      
+      // Strip markdown codeblocks
+      if (content.startsWith('```json')) {
+        content = content.substring(7);
+      } else if (content.startsWith('```')) {
+        content = content.substring(3);
+      }
+      if (content.endsWith('```')) {
+        content = content.substring(0, content.length - 3);
+      }
+      content = content.trim();
+
+      try {
+        const parsed = JSON.parse(content);
+        setAiResultPrompt(parsed.prompt || content);
+        setAiResultTranslation(parsed.translation || '');
+        showToast('创意提示词生成成功！', 'success');
+      } catch (parseErr) {
+        // Fallback: If not JSON, output directly
+        setAiResultPrompt(content);
+        setAiResultTranslation('API 未返回标准的 JSON 结构，已直接渲染原始模型回复。');
+        showToast('创意提示词已生成，但未进行结构化解析。', 'warning');
+      }
+    } catch (err) {
+      console.error(err);
+      setAiResultPrompt('');
+      setAiResultTranslation('');
+      showToast('大模型生成失败，请检查连线配置！', 'error');
+      
+      // Suggest local troubleshooting
+      let helpMsg = `调用接口出错: ${err.message}\n\n`;
+      if (llmPreset === 'ollama') {
+        helpMsg += `排查建议 (Ollama 本地配置):\n` +
+          `1. 确认已在电脑上启动 Ollama (在任务栏/菜单栏检查图标)\n` +
+          `2. 终端执行 "ollama list" 检查是否已下载模型 "${llmModel}"\n` +
+          `3. 确认接口地址 "http://localhost:11434/v1" 是否正常，或尝试通过浏览器直接访问该链接是否提示 "Ollama is running"`;
+      } else {
+        helpMsg += `排查建议:\n` +
+          `1. 检查 API 接口地址 "${llmApiUrl}" 是否能从本地网络访问\n` +
+          `2. 确认 API Key 密钥是否正确，或额度是否充足\n` +
+          `3. 检查选定的模型名称 "${llmModel}" 是否在服务端有效`;
+      }
+      setAiResultTranslation(helpMsg);
+    } finally {
+      setAiIsGenerating(false);
+    }
+  };
 
   // Fetch tag database
   useEffect(() => {
@@ -1332,6 +1558,14 @@ function App() {
               </li>
               <li>
                 <button 
+                  className={`nav-link-btn nav-link ${activeTab === 'ai-generator' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('ai-generator')}
+                >
+                  AI 提示词大师
+                </button>
+              </li>
+              <li>
+                <button 
                   className={`nav-link-btn nav-link ${activeTab === 'guide' ? 'active' : ''}`}
                   onClick={() => setActiveTab('guide')}
                 >
@@ -2108,6 +2342,234 @@ function App() {
                       </>
                     );
                   })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI PROMPT MASTER TAB */}
+        {activeTab === 'ai-generator' && (
+          <div className="ai-generator-tab animate-fade-in">
+            {/* Header section */}
+            <div className="generator-header glass-panel">
+              <span className="hero-badge"><Sparkles size={14} /> AI Creative Assistant</span>
+              <h2>AI 自然语言提示词大师</h2>
+              <p>
+                专为 Z-Image, Flux, SD3, Midjourney 等对自然语言理解能力出色的模型打造。通过大模型（支持配置本地 Ollama 或外部接口）自动将您的核心脑洞扩展并润色为精细化的创意画质描述词，支持中英双语对照。
+              </p>
+            </div>
+
+            {/* API Settings Panel (Collapsible Glass Panel) */}
+            <div className="glass-panel llm-settings-panel">
+              <div className="settings-header" onClick={() => setShowLlmSettings(!showLlmSettings)}>
+                <div className="header-title">
+                  <Settings size={18} />
+                  <span>大模型 API 配置 {llmPreset === 'ollama' ? '(本地 Ollama)' : llmPreset === 'deepseek' ? '(DeepSeek)' : llmPreset === 'openai' ? '(OpenAI)' : '(自定义)'}</span>
+                </div>
+                <button className="collapse-btn">
+                  {showLlmSettings ? '收起配置' : '展开配置'}
+                </button>
+              </div>
+
+              {showLlmSettings && (
+                <div className="settings-content animate-fade-in">
+                  <div className="presets-selector">
+                    <label className="config-label">预设服务商</label>
+                    <div className="presets-grid">
+                      <button className={`preset-pill ${llmPreset === 'ollama' ? 'active' : ''}`} onClick={() => handleLlmPresetChange('ollama')}>Ollama (本地)</button>
+                      <button className={`preset-pill ${llmPreset === 'deepseek' ? 'active' : ''}`} onClick={() => handleLlmPresetChange('deepseek')}>DeepSeek (远程)</button>
+                      <button className={`preset-pill ${llmPreset === 'openai' ? 'active' : ''}`} onClick={() => handleLlmPresetChange('openai')}>OpenAI (远程)</button>
+                      <button className={`preset-pill ${llmPreset === 'custom' ? 'active' : ''}`} onClick={() => setLlmPreset('custom')}>自定义接口</button>
+                    </div>
+                  </div>
+
+                  <div className="config-fields-grid">
+                    <div className="input-group">
+                      <label className="field-label">API 接口地址 (Base URL)</label>
+                      <input 
+                        type="text" 
+                        value={llmApiUrl} 
+                        onChange={(e) => setLlmApiUrl(e.target.value)} 
+                        placeholder="http://localhost:11434/v1"
+                      />
+                    </div>
+                    <div className="input-group">
+                      <label className="field-label">API Key 密钥 {llmPreset === 'ollama' && '(本地模型通常不需要)'}</label>
+                      <input 
+                        type="password" 
+                        value={llmApiKey} 
+                        onChange={(e) => setLlmApiKey(e.target.value)} 
+                        placeholder={llmPreset === 'ollama' ? '无需填写' : 'sk-...'}
+                      />
+                    </div>
+                    <div className="input-group">
+                      <label className="field-label">模型名称 (Model Name)</label>
+                      <input 
+                        type="text" 
+                        value={llmModel} 
+                        onChange={(e) => setLlmModel(e.target.value)} 
+                        placeholder="llama3:latest"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="settings-actions">
+                    <button className="test-conn-btn" onClick={testLlmConnection} disabled={aiConnectionTest === 'testing'}>
+                      {aiConnectionTest === 'testing' ? '正在测试...' : '测试接口连接'}
+                    </button>
+                    
+                    {aiConnectionTest === 'success' && (
+                      <span className="status-badge success"><Check size={14} /> 连接正常</span>
+                    )}
+                    {aiConnectionTest === 'error' && (
+                      <div className="status-badge error">
+                        <AlertCircle size={14} /> <span>连接失败: {aiConnectionError}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Main AI Generator Workspace */}
+            <div className="ai-workspace-layout">
+              {/* Left Column: Style Configs */}
+              <div className="ai-configs-panel glass-panel">
+                <div className="ai-section">
+                  <h3 className="section-title">Step 1. 选择艺术风格</h3>
+                  <div className="ai-style-grid">
+                    {AI_STYLES.map(style => (
+                      <button 
+                        key={style.id}
+                        className={`ai-style-card ${aiSelectedStyle === style.id ? 'active' : ''}`}
+                        onClick={() => setAiSelectedStyle(style.id)}
+                      >
+                        <div className="style-name">{style.name}</div>
+                        <div className="style-name-en">{style.nameEn}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="ai-section mt-4">
+                  <h3 className="section-title">Step 2. 画面构图视角</h3>
+                  <div className="ai-options-pills">
+                    {AI_COMPOSITIONS.map(comp => (
+                      <button 
+                        key={comp.id}
+                        className={`option-pill ${aiSelectedComposition === comp.id ? 'active' : ''}`}
+                        onClick={() => setAiSelectedComposition(comp.id)}
+                      >
+                        <span>{comp.name}</span>
+                        <span className="pill-en">{comp.nameEn}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="ai-section mt-4">
+                  <h3 className="section-title">Step 3. 画面光影氛围</h3>
+                  <div className="ai-options-pills">
+                    {AI_LIGHTINGS.map(light => (
+                      <button 
+                        key={light.id}
+                        className={`option-pill ${aiSelectedLighting === light.id ? 'active' : ''}`}
+                        onClick={() => setAiSelectedLighting(light.id)}
+                      >
+                        <span>{light.name}</span>
+                        <span className="pill-en">{light.nameEn}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Idea Input & Output Results */}
+              <div className="ai-results-panel glass-panel">
+                <div className="ai-section">
+                  <h3 className="section-title">Step 4. 输入您的创意脑洞</h3>
+                  <div className="idea-input-wrapper">
+                    <textarea 
+                      className="idea-textarea"
+                      value={aiUserIdea}
+                      onChange={(e) => setAiUserIdea(e.target.value)}
+                      placeholder="在这里输入想要绘制的画面场景或脑洞，可以用中文或英文。例如：
+一个穿着中国传统华服的白发机甲美少女，在漫天红叶飞舞的古风阁楼屋顶上练剑，夜空中有巨大的赛博朋克霓虹月亮，氛围极其浪漫唯美..."
+                    />
+                  </div>
+                </div>
+
+                {/* Generate Button */}
+                <div className="generate-btn-container">
+                  <button 
+                    className={`ai-generate-submit-btn ${aiIsGenerating ? 'generating' : ''}`}
+                    onClick={handleGenerateAIPrompt}
+                    disabled={aiIsGenerating}
+                  >
+                    <Sparkles size={18} />
+                    <span>{aiIsGenerating ? 'AI 正在全力以赴扩充中...' : '开始 AI 智能扩充提示词'}</span>
+                  </button>
+                </div>
+
+                {/* Loading and Results Area */}
+                <div className="ai-result-view-area">
+                  {aiIsGenerating ? (
+                    <div className="ai-loading-placeholder">
+                      <div className="loading-spinner"></div>
+                      <p>正在调度本地/云端大模型进行深度语义理解...</p>
+                      <p className="loading-subtext">我们将基于您选择的「{AI_STYLES.find(s => s.id === aiSelectedStyle)?.name}」风格、「{AI_COMPOSITIONS.find(c => c.id === aiSelectedComposition)?.name}」构图与「{AI_LIGHTINGS.find(l => l.id === aiSelectedLighting)?.name}」光影进行细节化艺术渲染。</p>
+                    </div>
+                  ) : aiResultPrompt ? (
+                    <div className="ai-result-success animate-fade-in">
+                      <div className="result-card">
+                        <div className="result-card-header">
+                          <h4>✨ 英文优化提示词 (Copy to Generate)</h4>
+                          <button 
+                            className="result-copy-btn"
+                            onClick={() => {
+                              navigator.clipboard.writeText(aiResultPrompt);
+                              showToast('英文提示词已成功复制到剪贴板！');
+                            }}
+                          >
+                            <Copy size={14} /> <span>复制 Prompt</span>
+                          </button>
+                        </div>
+                        <div className="result-text-box">
+                          {aiResultPrompt}
+                        </div>
+                      </div>
+
+                      {aiResultTranslation && (
+                        <div className="result-card mt-3">
+                          <div className="result-card-header">
+                            <h4>📝 中文对照释义 (Chinese Translation)</h4>
+                            <button 
+                              className="result-copy-btn"
+                              onClick={() => {
+                                navigator.clipboard.writeText(aiResultTranslation);
+                                showToast('中文释义已复制到剪贴板！');
+                              }}
+                            >
+                              <Copy size={14} /> <span>复制翻译</span>
+                            </button>
+                          </div>
+                          <div className="result-text-box translation-box">
+                            {aiResultTranslation}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="result-tips">
+                        <p>💡 提示：本工具生成的自然语言提示词已完美适配 Z-Image、Flux.1、Stable Diffusion 3 以及 Midjourney 模型。直接复制并在上述生图工具中运行，可获得无与伦比的精细度和场景还原度！</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="ai-result-empty">
+                      <p>✨ 创意结果将在这里呈现</p>
+                      <p className="subtext">在上方输入脑洞，点击“开始 AI 智能扩充提示词”，大模型即可为您润色生成电影级的英文 Prompt 与中文解释对照。</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
