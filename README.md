@@ -33,15 +33,15 @@ imageshow/
 │   ├── deployment.md           # 静态构建与多平台部署方案
 │   └── changelog.md            # 项目变更记录与升级历史
 ├── public/
-│   ├── media/                  # 分类媒体目录（支持绑定为指向本地其他输出目录的软链接）
+│   ├── media/                  # 分类媒体目录（支持绑定为指向本地其他输出目录 of 软链接）
+│   │   ├── media-data.json     # 扫描生成的前端 JSON 数据库
 │   │   ├── cyberpunk/
 │   │   ├── nature/
 │   │   └── fantasy/
-│   └── media-data.json         # 扫描生成的前端 JSON 数据库
 ├── src/
 │   ├── App.jsx                 # React 主应用
 │   ├── App.css                 # 局部布局与细化组件样式
-│   ├── index.css               # 全局设计系统及 3 套主题的 CSS 变量 & 动画定义
+│   ├── index.css               # 全局设计系统及 3 套主题 of CSS 变量 & 动画定义
 │   └── main.jsx                # React 入口
 ├── scan-media.js               # ComfyUI 元数据扫描核心脚本
 ├── package.json                # 项目依赖及运行配置
@@ -58,35 +58,20 @@ imageshow/
 npm install
 ```
 
-### 2. 双击运行扫描程序 (绑定与更新目录)
-我们已将扫描目录的脚本打包为双击即用的本地应用（存放于 `bin/` 目录中）：
-- 🖥️ **Windows 用户**: 直接双击运行 `bin/scanner-win.exe`
-- 🍎 **macOS 用户**: 在终端运行 `bin/scanner-macos`
+### 2. 运行本地扫描（更新与绑定目录）
+在项目根目录下，通过 Node.js 执行媒体扫描脚本：
+- **首次运行** 或需要 **切换绑定的目录**：
+  ```bash
+  npm run scan -- --switch
+  ```
+  在控制台输入文件夹路径（您可以直接把 ComfyUI 图片输出文件夹拖入终端窗口），扫描器会自动在 `public/` 下创建软链接 `media` 指向该目录，并将配置保存在根目录下的 `directory-config.json` 中。
+- **后续快速同步已有目录**：
+  ```bash
+  npm run scan
+  ```
+  程序会自动解析该目录下所有分类文件夹的图片参数，并将生成的 `media-data.json` 数据库保存至 `public/media/` 目录下。
 
-**首次运行**或需要**切换目录**时：
-1. 双击运行 `bin/scanner-win.exe`。
-2. 在弹出的窗口中，**直接把您的 ComfyUI 图片输出文件夹拖入窗口**（或手动输入绝对路径），然后回车。
-3. 扫描器会自动在 `public/` 下创建软链接 `media` 指向该目录（不占磁盘空间，如 `public/media -> /Users/xxx/ComfyUI/output`），并将配置保存在根目录下的 `directory-config.json` 中。
-4. 随后，它会自动解析该目录下所有分类文件夹的图片参数，并重构前台数据库。
-
-### 3. 运行本地扫描（Node.js 方式）
-```bash
-# 首次运行或需要切换目录
-npm run scan -- --switch
-```
-
-```bash
-# 后续快速同步已有目录
-npm run scan
-```
-
-### 4. 重新打包二进制程序
-如果您修改了 `scan-media.js`，可以使用以下命令重新编译生成 `bin/` 下的 Windows 与 macOS 双端可执行程序：
-```bash
-npm run build:bin
-```
-
-### 5. 开启本地开发预览
+### 3. 开启本地开发预览
 启动本地 Vite 调试服务器：
 ```bash
 npm run dev

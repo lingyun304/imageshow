@@ -8,7 +8,7 @@
 
 ## 2. 系统技术架构
 为了实现无后端的全静态运行并支持本地文件同步，系统采用以下架构：
-- **静态资源扫描器 (Build-time CLI):** 使用 Node.js 编写的 `scan-media.js` 脚本。运行时扫描本地 `/public/media/`（该文件夹可作为指向本地其他任意媒体输出目录的软链接/快捷方式），解析 PNG (`tEXt`/`iTXt`) 或 WebP (`XMP`) 二进制数据块中的 ComfyUI 提示词数据，并提取侧边栏 `.json` 文件作为兼容格式。生成最终的 `/public/media-data.json` 索引文件。
+- **静态资源扫描器 (Build-time CLI):** 使用 Node.js 编写的 `scan-media.js` 脚本。运行时扫描本地 `/public/media/`（该文件夹可作为指向本地其他任意媒体输出目录的软链接/快捷方式），解析 PNG (`tEXt`/`iTXt`) 或 WebP (`XMP`) 二进制数据块中的 ComfyUI 提示词数据，并提取侧边栏 `.json` 文件作为兼容格式。生成最终的 `/public/media/media-data.json` 索引文件。
 - **现代化前端展现层 (React Single Page App):** 采用 React 19 + Vite 8 + Vanilla CSS 构建，纯静态展示，通过 `fetch()` 读取扫描生成的 JSON 数据库。
 - **UI/UX 设计语言:** 支持三套独立的视觉系统一键无缝切换：默认的【科技暗黑 (Cyber Dark)】、亮色温暖且具有春意感的【清新雅致 (Fresh Mint)】、以及搭载了动感渐变背景与丰富微交互的【炫酷动感 (Dynamic Anime)】。三套主题均融入了高品质玻璃态拟物化 (Glassmorphic) 模块、响应式瀑布流 (Masonry Grid) 和顺滑的过渡动画，提供极佳的感官体验。
 

@@ -28,7 +28,7 @@ npm run scan
 npm run dev
 ```
 > [!NOTE]
-> `npm run scan` 执行了两个操作：一是通过 `scan-media.js` 解析媒体元数据生成 `public/media-data.json`；二是通过 `build-tags.js` 读取 `tag/Data/` 目录下的提示词文本，排重汇总后生成 `public/tag-data.json` 用于前台“提示词生成器”使用。
+> `npm run scan` 执行了两个操作：一是通过 `scan-media.js` 解析媒体元数据生成 `public/media/media-data.json`；二是通过 `build-tags.js` 读取 `tag/Data/` 目录下的提示词文本，排重汇总后生成 `public/tag-data.json` 用于前台“提示词生成器”使用。
 > 若只需单独重新编译提示词库，可以直接运行：
 > `node build-tags.js`
 
@@ -48,7 +48,7 @@ npm run build
 编译完成后，项目根目录下会生成一个 `dist/` 文件夹。该文件夹包含了网站运行所需的全部纯静态文件：
 - `dist/index.html` (主入口)
 - `dist/assets/` (合并压缩后的 JS 和 CSS 代码)
-- `dist/media-data.json` (被提取的媒体元数据 JSON 库)
+- `dist/media/media-data.json` (被提取的媒体元数据 JSON 库)
 - `dist/tag-data.json` (被汇总提取的提示词标签 JSON 库)
 - `dist/media/` (原始分类媒体目录)
 
@@ -79,7 +79,7 @@ npm run build
        }
 
        # 对元数据 JSON 禁用强缓存，防止媒体更新后前台不刷新
-       location ~* /(media-data|tag-data)\.json$ {
+       location ~* /(media/media-data|tag-data)\.json$ {
            add_header Cache-Control "no-cache, no-store, must-revalidate";
            expires 0;
        }
@@ -127,5 +127,5 @@ npm run build
 
 ## 5. 日常维护建议
 - **自动化扫描流水线:** 如果使用 Git 进行协作管理，可以将 `npm run scan` 写在 Git 客户端的 `pre-commit` 钩子中，每次提交代码时自动触发扫描，保障远程静态库数据永远是最新的。
-- **打包部署后的免 Node 环境更新**: 为了方便非技术人员在已打包的静态包中进行维护，您可以直接将 `bin/scanner-win.exe` 或 `bin/scanner-macos` 复制到编译出的 `dist/` 文件夹中并双击运行。程序会自动探测环境并在 `dist/media` 进行挂载和重写 `dist/media-data.json`，省去了部署端安装 Node.js 与前端依赖的麻烦。
+- **数据更新与同步**: 每次向 `media` 目录下新增或删除媒体文件后，都需要在项目根目录下执行 `npm run scan` 重新扫描生成 `public/media/media-data.json` 以同步最新媒体。
 - **图片尺寸建议:** 建议 ComfyUI 生成图片直接使用 JPG 或经过 WebP 压缩，或在前台展示时采用 WebP 格式，单个图片体积控制在 2MB 以下，从而提供最佳的页面首屏加载和瀑布流滚动流畅度。

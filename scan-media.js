@@ -9,7 +9,7 @@ const workingDir = process.cwd();
 const hasPublicDir = fs.existsSync(path.join(workingDir, 'public'));
 
 const IMAGES_DIR = hasPublicDir ? path.join(workingDir, 'public', 'media') : path.join(workingDir, 'media');
-const OUTPUT_FILE = hasPublicDir ? path.join(workingDir, 'public', 'media-data.json') : path.join(workingDir, 'media-data.json');
+const OUTPUT_FILE = hasPublicDir ? path.join(workingDir, 'public', 'media', 'media-data.json') : path.join(workingDir, 'media', 'media-data.json');
 
 // Parse PNG metadata (tEXt and iTXt chunks)
 function parsePngMetadata(filePath) {

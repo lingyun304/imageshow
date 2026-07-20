@@ -8,8 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "scan": "node scan-media.js && node build-tags.js",
-    "build:bin": "esbuild scan-media.js --bundle --platform=node --format=cjs --outfile=dist-bin/scanner.cjs && pkg dist-bin/scanner.cjs --targets node18-win-x64,node18-macos-x64 --out-path bin/"
+    "scan": "node scan-media.js && node build-tags.js"
   },
   "dependencies": {
     "lucide-react": "^1.23.0",

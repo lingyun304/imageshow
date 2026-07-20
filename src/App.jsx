@@ -1347,10 +1347,10 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
   // Fetch scanned media data
   useEffect(() => {
-    fetch('/media-data.json')
+    fetch('/media/media-data.json')
       .then(res => {
         if (!res.ok) {
-          throw new Error('Media metadata JSON not found. Please run the scanner.');
+          throw new Error('未在 media 目录下找到数据库。请在根目录下执行 npm run scan 生成！');
         }
         return res.json();
       })
@@ -1361,6 +1361,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       .catch(err => {
         console.error('Error loading image metadata:', err);
         setLoading(false);
+        showToast('加载数据库失败，请运行 scan 脚本进行同步扫描以生成数据库！', 'error');
       });
   }, []);
 
@@ -1374,11 +1375,42 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       
       const dirHandle = await window.showDirectoryPicker();
       setImporting(true);
-      setImportStatus('正在扫描文件夹结构...');
+      setImportStatus('正在检查数据库...');
       
+      let preScannedData = null;
+      let mediaDataFileHandle = null;
+      
+      try {
+        // Try to get media-data.json from root of the directory
+        mediaDataFileHandle = await dirHandle.getFileHandle('media-data.json');
+      } catch (e) {
+        try {
+          // Try to get media-data.json from media/ subdirectory
+          const mediaDirHandle = await dirHandle.getDirectoryHandle('media');
+          mediaDataFileHandle = await mediaDirHandle.getFileHandle('media-data.json');
+        } catch (err) {
+          // Not found
+        }
+      }
+
+      if (mediaDataFileHandle) {
+        try {
+          const file = await mediaDataFileHandle.getFile();
+          const text = await file.text();
+          preScannedData = JSON.parse(text);
+          showToast('成功载入本地 media-data.json 缓存，已开启极速导入模式！');
+        } catch (err) {
+          console.error('Failed to parse media-data.json from selected directory:', err);
+        }
+      } else {
+        // Show a warning/toast reminding them to run the scan command
+        showToast('提示：所选目录下未找到 media-data.json。建议在根目录运行 "npm run scan" 扫描生成；当前将采用前端实时解析。', 'warning');
+      }
+
+      setImportStatus('正在扫描文件夹结构...');
       const localImages = await scanLocalDirectory(dirHandle, (status) => {
         setImportStatus(status);
-      });
+      }, preScannedData);
       
       if (localImages.length === 0) {
         showToast('在该目录下未找到任何支持的媒体文件（图片/音视频）', 'error');
@@ -1405,10 +1437,10 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
   // Handler to reload scanned server database
   const handleLoadScannedData = () => {
     setLoading(true);
-    fetch('/media-data.json')
+    fetch('/media/media-data.json')
       .then(res => {
         if (!res.ok) {
-          throw new Error('Media metadata JSON not found. Please run the scanner.');
+          throw new Error('未在 media 目录下找到数据库。请在根目录下执行 npm run scan 生成！');
         }
         return res.json();
       })
@@ -1422,18 +1454,19 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       .catch(err => {
         console.error('Error loading image metadata:', err);
         setLoading(false);
-        showToast('加载默认数据库失败，请运行 scan 脚本进行同步', 'error');
+        showToast('加载数据库失败，请运行 scan 脚本进行同步扫描以生成数据库！', 'error');
       });
   };
 
   // Show Toast Helper
-  const showToast = (message, field = '') => {
-    setToast({ show: true, message, type: 'success' });
-    if (field) {
-      setCopiedField(field);
+  const showToast = (message, type = 'success') => {
+    const isFieldCopy = type !== 'success' && type !== 'error' && type !== 'warning' && type !== 'info';
+    setToast({ show: true, message, type: isFieldCopy ? 'success' : type });
+    if (isFieldCopy) {
+      setCopiedField(type);
       setTimeout(() => setCopiedField(''), 2000);
     }
-    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
 
   // Clipboard copy helper
@@ -1586,9 +1619,13 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className="toast glass-panel animate-fade-in-up">
+        <div className={`toast glass-panel animate-fade-in-up toast-${toast.type || 'success'}`}>
           <div className="toast-content">
-            <Check size={18} className="toast-icon" />
+            {toast.type === 'error' || toast.type === 'warning' ? (
+              <AlertCircle size={18} className="toast-icon" style={{ color: 'var(--accent-red, #ff5e5e)' }} />
+            ) : (
+              <Check size={18} className="toast-icon" />
+            )}
             <span>{toast.message}</span>
           </div>
         </div>

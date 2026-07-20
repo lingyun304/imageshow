@@ -303,7 +303,7 @@ function formatBytes(bytes) {
 }
 
 // Traverse local directory handle and load all images into database format
-export async function scanLocalDirectory(dirHandle, onProgress) {
+export async function scanLocalDirectory(dirHandle, onProgress, preScannedData = null) {
   const sidecarJsons = new Map();
   const imageFiles = [];
   
@@ -317,7 +317,7 @@ export async function scanLocalDirectory(dirHandle, onProgress) {
         const nameWithoutExt = basenameWithoutExt(file.name);
         const category = relativePath.length > 0 ? relativePath[relativePath.length - 1] : 'Uncategorized';
         
-        if (ext === '.json') {
+        if (ext === '.json' && file.name !== 'media-data.json') {
           try {
             const text = await file.text();
             const json = JSON.parse(text);
@@ -357,43 +357,53 @@ export async function scanLocalDirectory(dirHandle, onProgress) {
     const img = imageFiles[i];
     if (onProgress) onProgress(`正在解析元数据 (${i + 1}/${total}): ${img.filename}`);
     
-    let rawMetadata = null;
+    const matchId = `${img.category}-${img.name}`.replace(/[^a-zA-Z0-9-]/g, '_');
+    const matchedPreScanned = preScannedData ? preScannedData.find(item => item.id === matchId) : null;
     
-    if (img.ext === '.png') {
-      try {
-        const arrBuf = await img.file.arrayBuffer();
-        rawMetadata = await parsePngMetadata(arrBuf);
-      } catch (e) {
-        console.error('Error parsing PNG metadata client-side:', img.filename, e);
+    let extractedParams = null;
+    
+    if (matchedPreScanned && matchedPreScanned.metadata) {
+      extractedParams = matchedPreScanned.metadata;
+    } else {
+      let rawMetadata = null;
+      
+      if (img.ext === '.png') {
+        try {
+          const arrBuf = await img.file.arrayBuffer();
+          rawMetadata = await parsePngMetadata(arrBuf);
+        } catch (e) {
+          console.error('Error parsing PNG metadata client-side:', img.filename, e);
+        }
+      } else if (img.ext === '.webp') {
+        try {
+          const arrBuf = await img.file.arrayBuffer();
+          rawMetadata = parseWebpMetadata(arrBuf);
+        } catch (e) {
+          console.error('Error parsing WebP metadata client-side:', img.filename, e);
+        }
       }
-    } else if (img.ext === '.webp') {
-      try {
-        const arrBuf = await img.file.arrayBuffer();
-        rawMetadata = parseWebpMetadata(arrBuf);
-      } catch (e) {
-        console.error('Error parsing WebP metadata client-side:', img.filename, e);
+      
+      const sidecarKey = `${img.category}/${img.name}`;
+      if (sidecarJsons.has(sidecarKey)) {
+        const jsonContent = sidecarJsons.get(sidecarKey);
+        rawMetadata = rawMetadata || {};
+        if (jsonContent.prompt) {
+          rawMetadata.prompt = jsonContent.prompt;
+        } else {
+          rawMetadata.prompt = jsonContent;
+        }
+        if (jsonContent.workflow) {
+          rawMetadata.workflow = jsonContent.workflow;
+        }
       }
+      
+      extractedParams = extractComfyuiParams(rawMetadata);
     }
     
-    const sidecarKey = `${img.category}/${img.name}`;
-    if (sidecarJsons.has(sidecarKey)) {
-      const jsonContent = sidecarJsons.get(sidecarKey);
-      rawMetadata = rawMetadata || {};
-      if (jsonContent.prompt) {
-        rawMetadata.prompt = jsonContent.prompt;
-      } else {
-        rawMetadata.prompt = jsonContent;
-      }
-      if (jsonContent.workflow) {
-        rawMetadata.workflow = jsonContent.workflow;
-      }
-    }
-    
-    const extractedParams = extractComfyuiParams(rawMetadata);
     const objectUrl = URL.createObjectURL(img.file);
     
     images.push({
-      id: `${img.category}-${img.name}`.replace(/[^a-zA-Z0-9-]/g, '_'),
+      id: matchId,
       filename: img.filename,
       category: img.category,
       path: objectUrl,

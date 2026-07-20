@@ -1,0 +1,507 @@
+[
+  {
+    "id": "audio-audio_ace-step_input",
+    "filename": "audio_ace-step_input.mp3",
+    "category": "audio",
+    "path": "/media/audio/audio_ace-step_input.mp3",
+    "type": "audio",
+    "size": "972.82 KB",
+    "rawSizeBytes": 996164,
+    "updatedAt": "2026-07-20T01:48:56.662Z",
+    "metadata": {
+      "hasMetadata": false
+    }
+  },
+  {
+    "id": "cyberpunk-cyberpunk_street",
+    "filename": "cyberpunk_street.jpg",
+    "category": "cyberpunk",
+    "path": "/media/cyberpunk/cyberpunk_street.jpg",
+    "type": "image",
+    "size": "1.11 MB",
+    "rawSizeBytes": 1163141,
+    "updatedAt": "2026-07-20T01:48:56.700Z",
+    "metadata": {
+      "hasMetadata": true,
+      "prompt": "gorgeous cyberpunk city street at night, neon lights reflection on wet street pavement, futuristic high-tech vehicles, and cybernetic pedestrians, sleek glassmorphism style, cinematic, highly detailed",
+      "negativePrompt": "blurry, lowres, monochrome, deformed, bad anatomy, bad lighting, text, watermark, bad quality, anime, illustration",
+      "steps": 30,
+      "cfg": 7.5,
+      "sampler": "euler_ancestral",
+      "scheduler": "karras",
+      "seed": 857392019482,
+      "denoise": 1,
+      "model": "cyberpunkRealistic_v20.safetensors",
+      "width": 1024,
+      "height": 1024,
+      "rawPrompt": {
+        "3": {
+          "inputs": {
+            "seed": 857392019482,
+            "steps": 30,
+            "cfg": 7.5,
+            "sampler_name": "euler_ancestral",
+            "scheduler": "karras",
+            "denoise": 1,
+            "model": [
+              "4",
+              0
+            ],
+            "positive": [
+              "6",
+              0
+            ],
+            "negative": [
+              "7",
+              0
+            ],
+            "latent_image": [
+              "5",
+              0
+            ]
+          },
+          "class_type": "KSampler"
+        },
+        "4": {
+          "inputs": {
+            "ckpt_name": "cyberpunkRealistic_v20.safetensors"
+          },
+          "class_type": "CheckpointLoaderSimple"
+        },
+        "5": {
+          "inputs": {
+            "width": 1024,
+            "height": 1024,
+            "batch_size": 1
+          },
+          "class_type": "EmptyLatentImage"
+        },
+        "6": {
+          "inputs": {
+            "text": "gorgeous cyberpunk city street at night, neon lights reflection on wet street pavement, futuristic high-tech vehicles, and cybernetic pedestrians, sleek glassmorphism style, cinematic, highly detailed",
+            "clip": [
+              "4",
+              1
+            ]
+          },
+          "class_type": "CLIPTextEncode"
+        },
+        "7": {
+          "inputs": {
+            "text": "blurry, lowres, monochrome, deformed, bad anatomy, bad lighting, text, watermark, bad quality, anime, illustration",
+            "clip": [
+              "4",
+              1
+            ]
+          },
+          "class_type": "CLIPTextEncode"
+        },
+        "8": {
+          "inputs": {
+            "samples": [
+              "3",
+              0
+            ],
+            "vae": [
+              "4",
+              2
+            ]
+          },
+          "class_type": "VAEDecode"
+        },
+        "9": {
+          "inputs": {
+            "filename_prefix": "ComfyUI",
+            "images": [
+              "8",
+              0
+            ]
+          },
+          "class_type": "SaveImage"
+        }
+      },
+      "rawWorkflow": {
+        "last_node_id": 9,
+        "last_link_id": 9,
+        "nodes": [
+          {
+            "id": 3,
+            "type": "KSampler",
+            "properties": {}
+          },
+          {
+            "id": 4,
+            "type": "CheckpointLoaderSimple",
+            "properties": {}
+          },
+          {
+            "id": 5,
+            "type": "EmptyLatentImage",
+            "properties": {}
+          },
+          {
+            "id": 6,
+            "type": "CLIPTextEncode",
+            "properties": {}
+          },
+          {
+            "id": 7,
+            "type": "CLIPTextEncode",
+            "properties": {}
+          },
+          {
+            "id": 8,
+            "type": "VAEDecode",
+            "properties": {}
+          },
+          {
+            "id": 9,
+            "type": "SaveImage",
+            "properties": {}
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "fantasy-magic_forest",
+    "filename": "magic_forest.jpg",
+    "category": "fantasy",
+    "path": "/media/fantasy/magic_forest.jpg",
+    "type": "image",
+    "size": "1.16 MB",
+    "rawSizeBytes": 1215377,
+    "updatedAt": "2026-07-20T01:48:56.753Z",
+    "metadata": {
+      "hasMetadata": true,
+      "prompt": "magical hidden forest sanctuary, glowing mushrooms, crystal clear river, mystical glowing tree of life in the center, ethereal fairy lights, ultra-detailed fantasy art, enchanting vibe",
+      "negativePrompt": "modern buildings, concrete, cars, low quality, blurry, human, ugly, bad drawing, deformed, worst quality, monochrome",
+      "steps": 28,
+      "cfg": 6,
+      "sampler": "dpmpp_2m",
+      "scheduler": "exponential",
+      "seed": 482019483019,
+      "denoise": 1,
+      "model": "dreamshaper_v8.safetensors",
+      "width": 1024,
+      "height": 1024,
+      "rawPrompt": {
+        "3": {
+          "inputs": {
+            "seed": 482019483019,
+            "steps": 28,
+            "cfg": 6,
+            "sampler_name": "dpmpp_2m",
+            "scheduler": "exponential",
+            "denoise": 1,
+            "model": [
+              "4",
+              0
+            ],
+            "positive": [
+              "6",
+              0
+            ],
+            "negative": [
+              "7",
+              0
+            ],
+            "latent_image": [
+              "5",
+              0
+            ]
+          },
+          "class_type": "KSampler"
+        },
+        "4": {
+          "inputs": {
+            "ckpt_name": "dreamshaper_v8.safetensors"
+          },
+          "class_type": "CheckpointLoaderSimple"
+        },
+        "5": {
+          "inputs": {
+            "width": 1024,
+            "height": 1024,
+            "batch_size": 1
+          },
+          "class_type": "EmptyLatentImage"
+        },
+        "6": {
+          "inputs": {
+            "text": "magical hidden forest sanctuary, glowing mushrooms, crystal clear river, mystical glowing tree of life in the center, ethereal fairy lights, ultra-detailed fantasy art, enchanting vibe",
+            "clip": [
+              "4",
+              1
+            ]
+          },
+          "class_type": "CLIPTextEncode"
+        },
+        "7": {
+          "inputs": {
+            "text": "modern buildings, concrete, cars, low quality, blurry, human, ugly, bad drawing, deformed, worst quality, monochrome",
+            "clip": [
+              "4",
+              1
+            ]
+          },
+          "class_type": "CLIPTextEncode"
+        },
+        "8": {
+          "inputs": {
+            "samples": [
+              "3",
+              0
+            ],
+            "vae": [
+              "4",
+              2
+            ]
+          },
+          "class_type": "VAEDecode"
+        },
+        "9": {
+          "inputs": {
+            "filename_prefix": "ComfyUI",
+            "images": [
+              "8",
+              0
+            ]
+          },
+          "class_type": "SaveImage"
+        }
+      },
+      "rawWorkflow": {
+        "last_node_id": 9,
+        "last_link_id": 9,
+        "nodes": [
+          {
+            "id": 3,
+            "type": "KSampler",
+            "properties": {}
+          },
+          {
+            "id": 4,
+            "type": "CheckpointLoaderSimple",
+            "properties": {}
+          },
+          {
+            "id": 5,
+            "type": "EmptyLatentImage",
+            "properties": {}
+          },
+          {
+            "id": 6,
+            "type": "CLIPTextEncode",
+            "properties": {}
+          },
+          {
+            "id": 7,
+            "type": "CLIPTextEncode",
+            "properties": {}
+          },
+          {
+            "id": 8,
+            "type": "VAEDecode",
+            "properties": {}
+          },
+          {
+            "id": 9,
+            "type": "SaveImage",
+            "properties": {}
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "nature-mountain_lake",
+    "filename": "mountain_lake.jpg",
+    "category": "nature",
+    "path": "/media/nature/mountain_lake.jpg",
+    "type": "image",
+    "size": "949.32 KB",
+    "rawSizeBytes": 972105,
+    "updatedAt": "2026-07-20T01:48:56.797Z",
+    "metadata": {
+      "hasMetadata": true,
+      "prompt": "majestic sun-kissed mountain range, clear alpine lake reflecting the snow-covered peaks, lush green pine forest, golden hour lighting, breathtaking landscape photography",
+      "negativePrompt": "anime, cartoon, drawing, fake, oversaturated, city, structures, people, bad quality, blurry, watermark, signature",
+      "steps": 25,
+      "cfg": 7,
+      "sampler": "dpmpp_sde",
+      "scheduler": "normal",
+      "seed": 102948204918,
+      "denoise": 1,
+      "model": "sd_xl_base_1.0.safetensors",
+      "width": 1216,
+      "height": 832,
+      "rawPrompt": {
+        "3": {
+          "inputs": {
+            "seed": 102948204918,
+            "steps": 25,
+            "cfg": 7,
+            "sampler_name": "dpmpp_sde",
+            "scheduler": "normal",
+            "denoise": 1,
+            "model": [
+              "4",
+              0
+            ],
+            "positive": [
+              "6",
+              0
+            ],
+            "negative": [
+              "7",
+              0
+            ],
+            "latent_image": [
+              "5",
+              0
+            ]
+          },
+          "class_type": "KSampler"
+        },
+        "4": {
+          "inputs": {
+            "ckpt_name": "sd_xl_base_1.0.safetensors"
+          },
+          "class_type": "CheckpointLoaderSimple"
+        },
+        "5": {
+          "inputs": {
+            "width": 1216,
+            "height": 832,
+            "batch_size": 1
+          },
+          "class_type": "EmptyLatentImage"
+        },
+        "6": {
+          "inputs": {
+            "text": "majestic sun-kissed mountain range, clear alpine lake reflecting the snow-covered peaks, lush green pine forest, golden hour lighting, breathtaking landscape photography",
+            "clip": [
+              "4",
+              1
+            ]
+          },
+          "class_type": "CLIPTextEncode"
+        },
+        "7": {
+          "inputs": {
+            "text": "anime, cartoon, drawing, fake, oversaturated, city, structures, people, bad quality, blurry, watermark, signature",
+            "clip": [
+              "4",
+              1
+            ]
+          },
+          "class_type": "CLIPTextEncode"
+        },
+        "8": {
+          "inputs": {
+            "samples": [
+              "3",
+              0
+            ],
+            "vae": [
+              "4",
+              2
+            ]
+          },
+          "class_type": "VAEDecode"
+        },
+        "9": {
+          "inputs": {
+            "filename_prefix": "ComfyUI",
+            "images": [
+              "8",
+              0
+            ]
+          },
+          "class_type": "SaveImage"
+        }
+      },
+      "rawWorkflow": {
+        "last_node_id": 9,
+        "last_link_id": 9,
+        "nodes": [
+          {
+            "id": 3,
+            "type": "KSampler",
+            "properties": {}
+          },
+          {
+            "id": 4,
+            "type": "CheckpointLoaderSimple",
+            "properties": {}
+          },
+          {
+            "id": 5,
+            "type": "EmptyLatentImage",
+            "properties": {}
+          },
+          {
+            "id": 6,
+            "type": "CLIPTextEncode",
+            "properties": {}
+          },
+          {
+            "id": 7,
+            "type": "CLIPTextEncode",
+            "properties": {}
+          },
+          {
+            "id": 8,
+            "type": "VAEDecode",
+            "properties": {}
+          },
+          {
+            "id": 9,
+            "type": "SaveImage",
+            "properties": {}
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "test-00049-MiaoMiao_Harem__Am_2_5d_1_0-61284383",
+    "filename": "00049-MiaoMiao Harem _Am_2.5d_1.0-61284383.png",
+    "category": "test",
+    "path": "/media/test/00049-MiaoMiao Harem _Am_2.5d_1.0-61284383.png",
+    "type": "image",
+    "size": "2.05 MB",
+    "rawSizeBytes": 2151073,
+    "updatedAt": "2026-07-20T01:48:56.845Z",
+    "metadata": {
+      "hasMetadata": false
+    }
+  },
+  {
+    "id": "test2-00049-MiaoMiao_Harem__Am_2_5d_1_0-61284383",
+    "filename": "00049-MiaoMiao Harem _Am_2.5d_1.0-61284383.png",
+    "category": "test2",
+    "path": "/media/test2/00049-MiaoMiao Harem _Am_2.5d_1.0-61284383.png",
+    "type": "image",
+    "size": "2.05 MB",
+    "rawSizeBytes": 2151073,
+    "updatedAt": "2026-07-20T01:48:56.889Z",
+    "metadata": {
+      "hasMetadata": false
+    }
+  },
+  {
+    "id": "vedio-wan_2_2_14B_t2v",
+    "filename": "wan_2_2_14B_t2v.mp4",
+    "category": "vedio",
+    "path": "/media/vedio/wan_2_2_14B_t2v.mp4",
+    "type": "video",
+    "size": "921.88 KB",
+    "rawSizeBytes": 944006,
+    "updatedAt": "2026-07-20T01:48:56.914Z",
+    "metadata": {
+      "hasMetadata": false
+    }
+  }
+]
