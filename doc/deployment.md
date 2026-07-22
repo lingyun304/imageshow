@@ -159,6 +159,6 @@ npm run build
 10. **编辑时长对齐与声音模式切换:** 视频编辑模式下提供【与输入对齐】按键；新增【声音设置】（智能生成 `auto` / 保持原声 `origin`）控制药丸及悬浮 Help 提示框，样式全面契合系统 3 套 Theme 视觉规范。
 11. **DashScope 官方 API 全量规格对齐:** 将 POST API 请求结构重构为符合阿里百炼 MAAS 官方规范的 `input.media` 数组格式（R2V/Edit 参考图组装为 `reference_image` 类型，Edit 原视频组装为 `video` 类型，I2V 源图为 `first_frame` 类型）；以 `parameters.ratio` 传参画面比例；彻底解决 `Field required: input.media` 报错，并原生支持 `[Image 1]` 语法标签。
 12. **10 秒平缓异步轮询调优:** 视频异步合成任务轮询间隔由原先的 3 秒调整为 **10 秒**（`pollTaskStatus`），极大降低接口请求频次，降低服务器负载。
-13. **自动存入当前目录 /vedio 功能:** 绑定 `saveGeneratedVideoToCurrentDir`，当视频生成成功后自动将 MP4 写入用户使用的本地工作目录 `/vedio` 子文件夹中，并实时联动更新媒体库。
+13. **基于 Task ID 命名存入 /vedio 及图像双重进库:** 绑定 `saveGeneratedVideoToCurrentDir`，生成视频以 `${cleanTaskId}.mp4` 存入 `/vedio`（出错后续也能凭 Task ID 提取）；同时将生成用参考图与生成视频双重同步载入右侧成果库与首页分类媒体库。
 14. **严格精简收录 10 款指定大模型:** 下拉框严格仅收录指定的 10 款最新模型（`qwen-image-2.0-pro-2026-06-22` / `04-22`、`wan2.7-t2v-2026-06-12` / `04-25`、`happyhorse-1.1-t2v`、`wan2.7-i2v-2026-04-25`、`happyhorse-1.1-i2v`、`wan2.7-r2v-2026-06-12`、`happyhorse-1.0-r2v`、`happyhorse-1.0-video-edit`），按生成模式智能隔离呈现。
 

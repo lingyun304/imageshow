@@ -480,7 +480,9 @@ function App() {
   };
 
   const saveGeneratedVideoToCurrentDir = async (mediaUrl, taskId) => {
-    const fileName = `video_${taskId ? taskId.substring(0, 8) : Date.now()}_${Math.floor(Math.random() * 1000)}.mp4`;
+    // Use exact clean taskId as filename so failed or re-extracted tasks match 1:1
+    const cleanTaskId = taskId ? String(taskId).replace(/[^a-zA-Z0-9_-]/g, '') : `task_${Date.now()}`;
+    const fileName = `${cleanTaskId}.mp4`;
     let savedPath = mediaUrl || `/media/vedio/${fileName}`;
 
     try {
@@ -503,7 +505,7 @@ function App() {
 
         const savedFile = await fileHandle.getFile();
         savedPath = URL.createObjectURL(savedFile);
-        showToast(`🎉 视频已成功自动保存至当前使用目录的 /vedio/${fileName} 中！`, 'success');
+        showToast(`🎉 视频已基于 Task ID 成功存至本地 /vedio/${fileName}！`, 'success');
       } else {
         // Default mode: auto trigger download / export to /vedio directory
         savedPath = `/media/vedio/${fileName}`;
@@ -513,22 +515,22 @@ function App() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        showToast(`🎉 已自动保存/导出视频至当前 /vedio 目录 (文件: ${fileName})`, 'success');
+        showToast(`🎉 已基于 Task ID 自动导出视频至 /vedio (文件: ${fileName})`, 'success');
       }
 
       // Automatically sync new video to gallery under category 'vedio'
       const newMediaItem = {
-        id: `gen-vedio-${Date.now()}`,
+        id: `gen-vedio-${cleanTaskId}`,
         name: fileName,
         category: 'vedio',
         categoryChinese: '短视频',
         path: savedPath,
         type: 'video',
-        tags: ['AI生成视频', '视频合成'],
+        tags: ['AI生成视频', '视频合成', `Task:${cleanTaskId.substring(0, 8)}`],
         size: '1080P/720P',
         updatedAt: new Date().toLocaleDateString('zh-CN')
       };
-      setImages(prev => [newMediaItem, ...prev]);
+      setImages(prev => [newMediaItem, ...prev.filter(i => i.id !== newMediaItem.id)]);
     } catch (err) {
       console.error('Failed to auto save video to /vedio:', err);
       showToast(`自动保存视频至 /vedio 失败: ${err.message}`, 'warning');
@@ -723,6 +725,31 @@ function App() {
 
       showToast('视频生成任务派发成功！开启异步轮询...', 'success');
 
+      // Determine active reference/source image
+      const activeRefImage = videoSubTab === 'i2v' ? videoImagePreview
+        : videoSubTab === 'r2v' ? (videoRefImages[0] || videoImagePreview)
+        : videoSubTab === 'edit' ? (videoEditRefImage || videoImagePreview)
+        : null;
+
+      // Sync reference image to media gallery
+      if (activeRefImage) {
+        setImages(prev => {
+          if (!prev.some(img => img.path === activeRefImage)) {
+            return [{
+              id: `ref-img-${Date.now()}`,
+              name: `ref_image_${taskId ? taskId.substring(0, 8) : Date.now()}.png`,
+              category: 'vedio',
+              categoryChinese: '参考/源图',
+              path: activeRefImage,
+              type: 'image',
+              tags: ['AI生成参考图', '视频源图', `Task:${taskId ? taskId.substring(0, 8) : ''}`],
+              updatedAt: new Date().toLocaleDateString('zh-CN')
+            }, ...prev];
+          }
+          return prev;
+        });
+      }
+
       const cardId = `video-res-${Date.now()}`;
       const newVideoCard = {
         id: cardId,
@@ -735,9 +762,10 @@ function App() {
         aspectRatio: videoAspectRatio,
         duration: videoDuration,
         seed: videoSeed,
-        imagePreview: videoImagePreview,
+        imagePreview: activeRefImage,
+        refImages: videoRefImages,
         status: taskId ? initialStatus : 'SUCCEEDED',
-        path: taskId ? '' : '/media/vedio/wan_2_2_14B_t2v.mp4',
+        path: '',
         progressText: '任务排队中...',
         createdAt: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
       };
@@ -746,6 +774,12 @@ function App() {
 
       if (taskId) {
         pollTaskStatus(cardId, taskId, dashscopeApiKey, videoApiUrl);
+      } else {
+        // Mock mode fallback when no real task_id is returned
+        const localSavedPath = await saveGeneratedVideoToCurrentDir('/media/vedio/happyhorse-1.1-i2v-001.mp4', `mock-${Date.now()}`);
+        updateVideoCard(cardId, {
+          path: localSavedPath || '/media/vedio/happyhorse-1.1-i2v-001.mp4'
+        });
       }
     } catch (err) {
       console.error(err);
@@ -3999,14 +4033,28 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       <div key={item.id} className="video-item-card glass-panel animate-fade-in">
                         <div className="v-card-media-wrapper">
                           {item.status === 'PENDING' || item.status === 'RUNNING' ? (
-                            <div className="v-task-pending-placeholder">
+                            <div
+                              className="v-task-pending-placeholder"
+                              style={item.imagePreview ? {
+                                backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.9) 100%), url(${item.imagePreview})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center'
+                              } : {}}
+                            >
                               <div className="loading-spinner"></div>
                               <span className="v-pending-text">⏳ 正在渲染 ({item.status || 'RUNNING'})</span>
                               <span className="v-pending-subtext">{item.progressText || '后台计算中...'}</span>
                               <span className="v-pending-taskid">Task ID: {item.taskId}</span>
                             </div>
                           ) : item.status === 'FAILED' ? (
-                            <div className="v-task-failed-placeholder">
+                            <div
+                              className="v-task-failed-placeholder"
+                              style={item.imagePreview ? {
+                                backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.7) 0%, rgba(15,23,42,0.95) 100%), url(${item.imagePreview})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center'
+                              } : {}}
+                            >
                               <AlertCircle size={28} style={{ color: 'var(--accent-rose)' }} />
                               <span className="v-failed-text">⚠️ 渲染产生错误</span>
                               <span className="v-failed-subtext">{item.errorMsg || '任务异常中断'}</span>
@@ -4015,6 +4063,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                           ) : (
                             <video
                               src={item.path}
+                              poster={item.imagePreview || ''}
                               controls
                               loop
                               preload="metadata"

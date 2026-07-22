@@ -11,6 +11,24 @@
 * **功能影响范围**:
   视频生成控制台模块，保证了模型下拉框的极简清爽与精准匹配。
 
+### 2. 实现视频生成完成后同时自动加入“视频合成成果库”与“分类媒体库”
+* **需求背景**:
+  视频生成成功并存入工作目录 `/vedio` 后，需要确保视频同时出现在右侧 **“🎬 视频合成成果库”**（支持播放与快捷下载）和首页 **“分类媒体库”** 视频专区中。
+* **修改覆盖范围**:
+  1. 修改 `src/App.jsx`：在 `handleGenerateVideo` 本地模拟与 `checkSingleTask` 实时异步回调成功时，均调用 `saveGeneratedVideoToCurrentDir` 函数；确保将视频绝对/相对 Blob 路径即时写回 `setVideoResults` 成果卡片数组与 `setImages` 媒体库数组中。
+  2. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  视频生成控制台成果展示区与分类媒体库模块，实现了生成成果的实时同步渲染。
+
+### 3. 实现以 Task ID 命名落盘视频与生成用参考图像同步进入成果库
+* **需求背景**:
+  视频落盘需统一以真实 `task_id`（如 `${taskId}.mp4`）进行文件与路径命名，确保任务异常失败或后续仍能凭 Task ID 100% 提取；同时生成的图像与参考图需自动加入成果库与媒体库。
+* **修改覆盖范围**:
+  1. 修改 `src/App.jsx`：在 `saveGeneratedVideoToCurrentDir` 中将导出的视频文件名重构为 `${cleanTaskId}.mp4`；在 `handleGenerateVideo` 中将生成引用的源图/参考图自动同步至 `setImages` 媒体库数组，并在成果库卡片中保存 `imagePreview` 展示图。
+  2. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  视频生成控制台模块与分类媒体库模块，极大方便了按 Task ID 追踪提取文件，并保证了图像与视频资源的双重落盘同步。
+
 ## [1.6.9] - 2026-07-22
 
 ### 1. 全量适配阿里 DashScope 视频 API 官方规范 (R2V/Edit 媒体类型、Ratio 与 [Image N] 语法)

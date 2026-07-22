@@ -127,7 +127,7 @@
   - **符合官方规范的 Media 数组与 Ratio 参数 Payload 请求:** 严格遵照阿里 DashScope 官方协议解析媒体项（R2V/Edit 的参考图组装为 `{ type: "reference_image", url: ... }`，原视频组装为 `{ type: "video", url: ... }`，I2V 源图组装为 `{ type: "first_frame", url: ... }`）；画面长宽比统一以 `parameters.ratio`（如 `16:9`）下发；编辑模式下对齐时长时省略 `duration` 字段；R2V 预设与变量药丸全面适配 `[Image 1]`、`[Image 2]` 方括号官方语法。
   - **CORS 跨域代理:** 在 Vite 配置中搭建 `/api/v1` 与 `/dashscope-proxy` 本地代理层（指向阿里 MAAS / DashScope 域名），彻底消除浏览器直连 API 产生的预检 CORS 阻塞问题。
   - **异步任务轮询机制:** 在调用 `POST` 合成视频服务获取 `task_id` 后，系统自动发起周期为 10 秒的平缓异步轮询请求（对 `GET /api/v1/tasks/{task_id}` 执行代理获取），实时同步任务状态（`PENDING` -> `RUNNING` -> `SUCCEEDED` / `FAILED`），避免请求过于频繁。
-  - **成果视频自动落盘存入当前工作目录 `/vedio`:** 视频渲染成功后（`status === "SUCCEEDED"`），系统自动通过 File System Access API 句柄或本地文件导出机制，将 `.mp4` 文件自动写入当前活动工作目录的 `/vedio/`（或 `/media/vedio/`）子目录下，并同步更新媒体画廊（`images`）分类库。
-- **成果库卡片与交互 (Showcase & Management):**
-  - 卡片集成 HTML5 原生播放器、模型徽章（HappyHorse / Wanx / 自定义模型等）、属性标签、异步任务状态标签、Prompt 一键复制与 MP4 视频本地保存。
+  - **基于 Task ID 精确命名落盘存入 `/vedio`:** 视频合成落盘以真实 `task_id`（如 `${taskId}.mp4`）进行文件与路径命名，确保任务异常失败或后续提取时能够凭 Task ID 100% 对应查找。
+- **成果库卡片与图像/视频双重同步交互 (Showcase & Gallery Integration):**
+  - 生成过程与完成后，生成用参考图与生成的视频自动双重同步至右侧 **“🎬 视频合成成果库”**（支持排队/失败卡片结合参考图蒙版展示）及首页 **“分类媒体库”** 专区。
 
