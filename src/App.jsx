@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Image as ImageIcon, 
-  Search, 
-  SlidersHorizontal, 
-  Copy, 
-  Check, 
-  Download, 
-  X, 
-  ChevronLeft, 
-  ChevronRight, 
-  Folder, 
+import {
+  Image as ImageIcon,
+  Search,
+  SlidersHorizontal,
+  Copy,
+  Check,
+  Download,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Folder,
   FolderOpen,
-  Layers, 
-  Info, 
-  Terminal, 
-  Database, 
+  Layers,
+  Info,
+  Terminal,
+  Database,
   BookOpen,
   ArrowRight,
   Sparkles,
@@ -32,7 +32,11 @@ import {
   RefreshCw,
   Shuffle,
   Settings,
-  AlertCircle
+  AlertCircle,
+  Video,
+  Film,
+  Upload,
+  Play
 } from 'lucide-react';
 import './App.css';
 import { scanLocalDirectory } from './utils/metadataParser';
@@ -88,6 +92,21 @@ const AI_LIGHTINGS = [
   { id: 'backlight', name: '逆光轮廓', nameEn: 'Rim Backlighting', prompt: 'strong backlighting, glowing rim light outlining the edges, high silhouette contrast' }
 ];
 
+const VIDEO_PROMPT_EXAMPLES = [
+  { label: '湖光自然', text: '微风轻拂过恬静的极简湖面，岸边浅绿色风铃叶慢速摇曳，画面光影柔和安详，细节细腻流畅。' },
+  { label: '极简光影', text: '深色质感背景中，一缕柔和的淡金微光沿磨砂玻璃边缘极缓推移，展现极简沉稳的气息。' },
+  { label: '镜头慢推', text: '镜头缓慢地向静置在沉木桌面上的陶瓷茶杯推进，细微的水汽微幅升腾，微距细节清晰质朴。' },
+  { label: '风吹麦浪', text: '微风徐徐刮过金黄色的麦田，麦浪呈现轻微平缓的摆动，天空云朵缓慢漂移，气韵安宁。' }
+];
+
+const VIDEO_MODELS = [
+  { id: 'happyhorse-1.1-t2v', name: 'happyhorse-1.1-t2v', tag: '阿里 HappyHorse 文生视频', provider: 'Aliyun DashScope', mode: 't2v' },
+  { id: 'happyhorse-1.1-i2v', name: 'happyhorse-1.1-I2V', tag: '阿里 HappyHorse 图生视频', provider: 'Aliyun DashScope', mode: 'i2v' },
+  { id: 'happyhorse-1.0-r2v', name: 'happyhorse-1.0-r2v', tag: '阿里 HappyHorse 参考生视频', provider: 'Aliyun DashScope', mode: 'r2v' },
+  { id: 'happyhorse-1.1-r2v', name: 'happyhorse-1.1-r2v', tag: '阿里 HappyHorse 参考生视频', provider: 'Aliyun DashScope', mode: 'r2v' },
+  { id: 'happyhorse-1.0-video-edit', name: 'happyhorse-1.0-video-edit', tag: '阿里 HappyHorse 视频编辑', provider: 'Aliyun DashScope', mode: 'edit' }
+];
+
 // Media category translation dictionary for displaying both Chinese and English
 const mediaCategoryTranslations = {
   all: { zh: '全部媒体', en: 'All' },
@@ -117,6 +136,30 @@ function getMediaCategoryDisplayName(cat) {
   return enName;
 }
 
+// Helper to transform full remote API URLs to local Vite proxy endpoints to prevent browser CORS errors
+function getProxiedUrl(url) {
+  if (!url) return url;
+  if (url.startsWith('https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com')) {
+    return url.replace('https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com', '');
+  }
+  if (url.startsWith('https://dashscope.aliyuncs.com')) {
+    return url.replace('https://dashscope.aliyuncs.com', '/dashscope-proxy');
+  }
+  return url;
+}
+
+// Derive Aliyun DashScope task status query URL from task ID
+function getTaskStatusUrl(videoApiUrl, taskId) {
+  if (!taskId) return '';
+  if (!videoApiUrl) return `/api/v1/tasks/${taskId}`;
+  const idx = videoApiUrl.indexOf('/api/v1/');
+  if (idx !== -1) {
+    const baseUrl = videoApiUrl.substring(0, idx + '/api/v1'.length);
+    return `${baseUrl}/tasks/${taskId}`;
+  }
+  return `/api/v1/tasks/${taskId}`;
+}
+
 function App() {
   // Theme state
   const [theme, setTheme] = useState(() => {
@@ -136,12 +179,12 @@ function App() {
   // Image data state
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Local directory import state
   const [isLocalImport, setIsLocalImport] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importStatus, setImportStatus] = useState('');
-  
+
   // Gallery filters and search
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,6 +229,330 @@ function App() {
   const [aiConnectionError, setAiConnectionError] = useState('');
   const [showLlmSettings, setShowLlmSettings] = useState(false);
 
+  // Video Generator States
+  const [videoSubTab, setVideoSubTab] = useState('t2v'); // 'i2v', 't2v', 'r2v', 'edit'
+  const [availableVideoModels, setAvailableVideoModels] = useState(() => {
+    const savedCustom = localStorage.getItem('custom_video_models');
+    if (savedCustom) {
+      try {
+        const parsed = JSON.parse(savedCustom);
+        return [...VIDEO_MODELS, ...parsed];
+      } catch (e) {
+        return VIDEO_MODELS;
+      }
+    }
+    return VIDEO_MODELS;
+  });
+  const [showAddModelModal, setShowAddModelModal] = useState(false);
+  const [newModelName, setNewModelName] = useState('');
+  const [newModelTag, setNewModelTag] = useState('');
+  const [videoModel, setVideoModel] = useState('happyhorse-1.1-t2v');
+  const [videoPrompt, setVideoPrompt] = useState('微风轻拂过恬静的极简湖面，岸边浅绿色风铃叶慢速摇曳，画面光影柔和安详，细节细腻流畅。');
+
+  // Sync selected videoModel with current videoSubTab mode filter
+  useEffect(() => {
+    const filtered = availableVideoModels.filter(m => !m.mode || m.mode === videoSubTab);
+    if (filtered.length > 0 && !filtered.some(m => m.id === videoModel)) {
+      setVideoModel(filtered[0].id);
+    }
+  }, [videoSubTab, availableVideoModels]);
+  const [videoResolution, setVideoResolution] = useState('720P'); // '720P', '1080P'
+  const [videoAspectRatio, setVideoAspectRatio] = useState('16:9'); // '16:9', '9:16', '1:1', '4:3', '3:4'
+  const [videoDuration, setVideoDuration] = useState(5); // 3 to 15
+  const [videoSeed, setVideoSeed] = useState(935123587);
+  const [videoImagePreview, setVideoImagePreview] = useState(null);
+  const [videoFilePreview, setVideoFilePreview] = useState(null);
+  const [dashscopeApiKey, setDashscopeApiKey] = useState(() => localStorage.getItem('dashscopeApiKey') || '');
+  const [videoApiUrl, setVideoApiUrl] = useState(() => localStorage.getItem('videoApiUrl') || 'https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis');
+  const [showVideoApiSettings, setShowVideoApiSettings] = useState(false);
+  const [videoIsGenerating, setVideoIsGenerating] = useState(false);
+  const [videoProgressStatus, setVideoProgressStatus] = useState('');
+  const [videoFilterModel, setVideoFilterModel] = useState('all');
+  const [videoFilterSubTab, setVideoFilterSubTab] = useState('all');
+
+  const [videoResults, setVideoResults] = useState([
+    {
+      id: 'video-res-1',
+      model: 'HappyHorse-1.1-T2V',
+      subTab: 't2v',
+      title: '恬静湖光自然特写',
+      prompt: '微风轻拂过恬静的极简湖面，岸边浅绿色风铃叶慢速摇曳，画面光影柔和安详，细节细腻流畅。',
+      resolution: '720P',
+      aspectRatio: '16:9',
+      duration: 5,
+      seed: 935123587,
+      path: '/media/vedio/wan_2_2_14B_t2v-.mp4',
+      createdAt: '2026-07-21 15:30'
+    },
+    {
+      id: 'video-res-2',
+      model: 'wanx2.1-t2v-turbo',
+      subTab: 't2v',
+      title: '极简光影微距流线',
+      prompt: '深色质感背景中，一缕柔和的淡金微光沿磨砂玻璃边缘极缓推移，展现极简沉稳的气息。',
+      resolution: '1080P',
+      aspectRatio: '16:9',
+      duration: 5,
+      seed: 482019482,
+      path: '/media/vedio/wan_2_2_14B_t2v-.mp4',
+      createdAt: '2026-07-21 14:15'
+    }
+  ]);
+
+  useEffect(() => {
+    localStorage.setItem('dashscopeApiKey', dashscopeApiKey);
+  }, [dashscopeApiKey]);
+  useEffect(() => {
+    localStorage.setItem('videoApiUrl', videoApiUrl);
+  }, [videoApiUrl]);
+
+  const handleVideoImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setVideoImagePreview(event.target.result);
+        showToast('源图解析上传成功！', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('video/')) {
+        showToast('请上传有效的视频文件 (MP4 / WebM / MOV)', 'warning');
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      setVideoFilePreview(url);
+      showToast('待编辑的原视频上传成功！', 'success');
+    }
+  };
+
+  const handleAddCustomModel = () => {
+    if (!newModelName.trim()) {
+      showToast('请输入模型名称/ID', 'warning');
+      return;
+    }
+    const modelId = newModelName.trim();
+    if (availableVideoModels.some(m => m.id === modelId)) {
+      showToast('该模型名称已存在！', 'warning');
+      return;
+    }
+    const newObj = {
+      id: modelId,
+      name: modelId,
+      tag: newModelTag.trim() || '自定义视频大模型',
+      provider: 'Custom',
+      mode: videoSubTab || 't2v'
+    };
+    const updated = [...availableVideoModels, newObj];
+    setAvailableVideoModels(updated);
+
+    const customModels = updated.filter(m => !VIDEO_MODELS.some(base => base.id === m.id));
+    localStorage.setItem('custom_video_models', JSON.stringify(customModels));
+
+    setVideoModel(modelId);
+    setNewModelName('');
+    setNewModelTag('');
+    setShowAddModelModal(false);
+    showToast(`新模型 [${modelId}] 已添加并选中！`, 'success');
+  };
+
+  const updateVideoCard = (cardId, updates) => {
+    setVideoResults(prev => prev.map(item => {
+      if (item.id === cardId) {
+        return { ...item, ...updates };
+      }
+      return item;
+    }));
+  };
+
+  const checkSingleTask = async (cardId, taskId, apiKey, rawApiUrl) => {
+    if (!taskId || taskId.startsWith('task-')) {
+      showToast('无法刷新未绑定真实 Task ID 的本地模拟记录', 'info');
+      return true;
+    }
+    const proxiedTaskUrl = getProxiedUrl(getTaskStatusUrl(rawApiUrl, taskId));
+    try {
+      const resp = await fetch(proxiedTaskUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey.trim()}`
+        }
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        let msg = `HTTP ${resp.status}`;
+        try {
+          const parsed = JSON.parse(errText);
+          if (parsed.message) msg = parsed.message;
+        } catch (e) {
+          msg = errText;
+        }
+        throw new Error(msg);
+      }
+
+      const data = await resp.json();
+      const taskOutput = data?.output || {};
+      const status = taskOutput.task_status;
+
+      if (status === 'SUCCEEDED') {
+        const mediaUrl = taskOutput.video_url || taskOutput.results?.[0]?.url || taskOutput.result_url || taskOutput.render_urls?.[0];
+        updateVideoCard(cardId, {
+          status: 'SUCCEEDED',
+          path: mediaUrl || '/media/vedio/wan_2_2_14B_t2v.mp4',
+          completedAt: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+        });
+        showToast(`任务 [${taskId.substring(0, 8)}] 渲染成功！`, 'success');
+        return true;
+      } else if (status === 'FAILED' || status === 'CANCELED') {
+        const errReason = taskOutput.message || taskOutput.code || '渲染出现问题';
+        updateVideoCard(cardId, {
+          status: 'FAILED',
+          errorMsg: `生成失败: ${errReason}`
+        });
+        showToast(`任务 [${taskId.substring(0, 8)}] 渲染失败: ${errReason}`, 'error');
+        return true;
+      } else {
+        updateVideoCard(cardId, {
+          status: status || 'RUNNING',
+          progressText: `模型渲染中 (${status || 'RUNNING'})...`
+        });
+        return false;
+      }
+    } catch (err) {
+      console.error('Check task error:', err);
+      showToast(`查询任务状态失败: ${err.message}`, 'error');
+      return false;
+    }
+  };
+
+  const pollTaskStatus = (cardId, taskId, apiKey, rawApiUrl) => {
+    let attempts = 0;
+    const maxAttempts = 120; // 6 mins max
+
+    const timer = setInterval(async () => {
+      attempts++;
+      const finished = await checkSingleTask(cardId, taskId, apiKey, rawApiUrl);
+      if (finished || attempts >= maxAttempts) {
+        clearInterval(timer);
+        if (!finished && attempts >= maxAttempts) {
+          updateVideoCard(cardId, {
+            status: 'FAILED',
+            errorMsg: '查询任务状态超时，请点击“刷新状态”重试'
+          });
+        }
+      } else {
+        updateVideoCard(cardId, {
+          pollCount: attempts,
+          progressText: `模型渲染中... 已轮询 ${attempts} 次 (等待约 ${attempts * 3} 秒)`
+        });
+      }
+    }, 3000);
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!videoPrompt.trim()) {
+      showToast('请输入视频提示词内容！', 'error');
+      return;
+    }
+    if ((videoSubTab === 'i2v' || videoSubTab === 'r2v') && !videoImagePreview) {
+      showToast('请上传参考图片/源图！', 'error');
+      return;
+    }
+    if (!dashscopeApiKey.trim()) {
+      setShowVideoApiSettings(true);
+      showToast('请在接口设置中填入 API Key！', 'error');
+      return;
+    }
+
+    setVideoIsGenerating(true);
+    setVideoProgressStatus(`正在连接阿里 DashScope (${videoModel})...`);
+
+    try {
+      const proxiedSubmitUrl = getProxiedUrl(videoApiUrl);
+      const resp = await fetch(proxiedSubmitUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${dashscopeApiKey.trim()}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable'
+        },
+        body: JSON.stringify({
+          model: videoModel,
+          input: {
+            prompt: videoPrompt,
+            ...(videoImagePreview ? { img_url: videoImagePreview } : {})
+          },
+          parameters: {
+            size: videoAspectRatio === '16:9' ? '1280*720' : videoAspectRatio === '9:16' ? '720*1280' : '1024*1024',
+            duration: videoDuration,
+            seed: videoSeed
+          }
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        let msg = `HTTP ${resp.status}`;
+        try {
+          const parsed = JSON.parse(errText);
+          if (parsed.message) msg = parsed.message;
+        } catch (e) {
+          msg = errText;
+        }
+        throw new Error(msg);
+      }
+
+      const resData = await resp.json();
+      const taskId = resData?.output?.task_id;
+      const initialStatus = resData?.output?.task_status || 'PENDING';
+
+      showToast('视频生成任务派发成功！开启异步轮询...', 'success');
+
+      const cardId = `video-res-${Date.now()}`;
+      const newVideoCard = {
+        id: cardId,
+        taskId: taskId || `task-${Date.now()}`,
+        model: videoModel,
+        subTab: videoSubTab,
+        title: videoPrompt.substring(0, 15) + '...',
+        prompt: videoPrompt,
+        resolution: videoResolution,
+        aspectRatio: videoAspectRatio,
+        duration: videoDuration,
+        seed: videoSeed,
+        imagePreview: videoImagePreview,
+        status: taskId ? initialStatus : 'SUCCEEDED',
+        path: taskId ? '' : '/media/vedio/wan_2_2_14B_t2v.mp4',
+        progressText: '任务排队中...',
+        createdAt: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setVideoResults(prev => [newVideoCard, ...prev]);
+
+      if (taskId) {
+        pollTaskStatus(cardId, taskId, dashscopeApiKey, videoApiUrl);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(`视频生成失败: ${err.message}`, 'error');
+    } finally {
+      setVideoIsGenerating(false);
+      setVideoProgressStatus('');
+    }
+  };
+
+  useEffect(() => {
+    localStorage.setItem('dashscopeApiKey', dashscopeApiKey);
+  }, [dashscopeApiKey]);
+  useEffect(() => {
+    localStorage.setItem('videoApiUrl', videoApiUrl);
+  }, [videoApiUrl]);
   useEffect(() => {
     localStorage.setItem('llmApiUrl', llmApiUrl);
   }, [llmApiUrl]);
@@ -358,7 +725,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       }
 
       let content = data.choices[0].message.content.trim();
-      
+
       // Strip markdown codeblocks
       if (content.startsWith('```json')) {
         content = content.substring(7);
@@ -386,7 +753,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       setAiResultPrompt('');
       setAiResultTranslation('');
       showToast('大模型生成失败，请检查连线配置！', 'error');
-      
+
       // Suggest local troubleshooting
       let helpMsg = `调用接口出错: ${err.message}\n\n`;
       if (llmPreset === 'ollama') {
@@ -466,17 +833,17 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
     let prefixTags = [];
     let suffixTags = [];
-    
+
     if (genModel === 'pony') {
       prefixTags.push('score_9, score_8_up, score_7_up, score_6_up, score_5_up, score_4_up');
-      
+
       if (genRating === 'safe') prefixTags.push('rating_safe');
       else if (genRating === 'sensitive') prefixTags.push('rating_questionable');
       else prefixTags.push('rating_explicit');
-      
+
       prefixTags.push('source_anime');
       negative = 'score_6, score_5, score_4, worst quality, low quality, bad anatomy, blurry, watermarked, signature';
-    } 
+    }
     else if (genModel === 'illustrious') {
       if (genRating === 'safe') prefixTags.push('safe');
       else if (genRating === 'sensitive') prefixTags.push('sensitive');
@@ -485,11 +852,11 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
       suffixTags.push('masterpiece, best quality, amazing quality, very aesthetic, absurdres');
       negative = 'lowres, worst quality, bad quality, bad anatomy, bad proportions, blurry, sketch, censor, signature, watermark, artist name, artistic error, artistic failure';
-    } 
+    }
     else {
       if (genRating === 'safe') prefixTags.push('rating_safe');
       else if (genRating === 'nsfw' || genRating === 'explicit') prefixTags.push('nsfw');
-      
+
       suffixTags.push('masterpiece, best quality, high quality');
       negative = 'worst quality, low quality, bad anatomy, bad hands, missing fingers, blurry, watermark, signature';
     }
@@ -646,8 +1013,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
     let activeStyleKey = styleKey;
     if (activeStyleKey === 'random') {
       const keys = Object.keys(styles);
-      const filteredKeys = (genRating === 'nsfw' || genRating === 'explicit') 
-        ? keys 
+      const filteredKeys = (genRating === 'nsfw' || genRating === 'explicit')
+        ? keys
         : keys.filter(k => k !== 'lewd' && k !== 'bdsm' && k !== 'stealth');
       activeStyleKey = filteredKeys[Math.floor(Math.random() * filteredKeys.length)];
     }
@@ -661,7 +1028,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
     const selectedList = [];
 
     const expandNudityTags = (list) => {
-      const hasNude = list.some(t => 
+      const hasNude = list.some(t =>
         t.raw === 'nude' || t.raw === 'naked' || t.raw === 'completely nude' || t.raw === 'fully nude'
       );
       if (!hasNude) return list;
@@ -672,7 +1039,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       const has3girls = list.some(t => t.raw === '3girls');
       const hasGroup = list.some(t => t.raw === 'group' || t.raw === 'multi-person' || t.raw === 'harem' || t.raw === 'gangbang');
 
-      let newList = list.filter(t => 
+      let newList = list.filter(t =>
         t.raw !== 'nude' && t.raw !== 'naked' && t.raw !== 'completely nude' && t.raw !== 'fully nude'
       );
 
@@ -705,8 +1072,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       return newList;
     };
 
-    const isMultiCharacter = (activeStyleKey === 'multi') || 
-                             (['lewd', 'bdsm', 'stealth'].includes(activeStyleKey) && Math.random() < 0.6);
+    const isMultiCharacter = (activeStyleKey === 'multi') ||
+      (['lewd', 'bdsm', 'stealth'].includes(activeStyleKey) && Math.random() < 0.6);
 
     if (['lewd', 'bdsm', 'stealth'].includes(activeStyleKey)) {
       const adultTags = [];
@@ -755,20 +1122,20 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
         const templates = [
           [
-            ['shibari', '日式绳艺'], ['kinbaku', '绳缚'], ['hemp rope', '麻绳'], 
-            ['bound torso', '捆绑躯干'], ['rope marks', '绳痕'], 
-            ['skindentation', '勒痕'], 
+            ['shibari', '日式绳艺'], ['kinbaku', '绳缚'], ['hemp rope', '麻绳'],
+            ['bound torso', '捆绑躯干'], ['rope marks', '绳痕'],
+            ['skindentation', '勒痕'],
             ['girl face visible', '女孩脸部可见'], ['at least one face visible', '至少有一张脸可见']
           ],
           [
-            ['ball gag', '口球'], ['ring gag', '口圈'], ['drooling', '流口水'], 
-            ['saliva trail', '唾液线'], 
+            ['ball gag', '口球'], ['ring gag', '口圈'], ['drooling', '流口水'],
+            ['saliva trail', '唾液线'],
             ['tears', '泪水'], ['struggling', '挣扎'], ['choker', '项圈'], ['leash', '牵引绳'],
             ['girl face visible', '女孩脸部可见'], ['at least one face visible', '至少有一张脸可见']
           ],
           [
-            ['bound', '被绑'], 
-            ['handcuffs', '手铐'], ['blindfold', '眼罩'], ['scared', '害怕'], 
+            ['bound', '被绑'],
+            ['handcuffs', '手铐'], ['blindfold', '眼罩'], ['scared', '害怕'],
             ['crying', '哭泣'], ['whip marks', '鞭痕'],
             ['girl face visible', '女孩脸部可见'], ['at least one face visible', '至少有一张脸可见']
           ]
@@ -838,26 +1205,26 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
         const templates = [
           [
-            ['upper body normal', '上半身正常'], ['smile', '微笑'], ['table', '桌子'], 
-            ['no panties', '无内裤'], ['legs trembling', '双腿颤抖'], 
-            ['pussy juice trail', '爱液痕迹'], ['stealth sex', '隐秘性交'], 
+            ['upper body normal', '上半身正常'], ['smile', '微笑'], ['table', '桌子'],
+            ['no panties', '无内裤'], ['legs trembling', '双腿颤抖'],
+            ['pussy juice trail', '爱液痕迹'], ['stealth sex', '隐秘性交'],
             ['boy head out of frame', '男孩头部出框'], ['girl face visible', '女孩脸部可见'],
             ['at least one face visible', '至少有一张脸可见']
           ],
           [
-            ['lifting person', '抱起'], ['feet', '双脚'], ['toes', '脚趾'], ['toe scrunch', '脚趾蜷缩'], 
+            ['lifting person', '抱起'], ['feet', '双脚'], ['toes', '脚趾'], ['toe scrunch', '脚趾蜷缩'],
             ['trembling', '发抖'], ['pussy juice trail', '爱液滴落'],
             ['boy head out of frame', '男孩头部出框'], ['girl face visible', '女孩脸部可见'],
             ['at least one face visible', '至少有一张脸可见']
           ],
           [
-            ['against glass', '贴在玻璃上'], ['frosted glass', '磨砂玻璃'], 
-            ['breast press', '乳房贴玻璃'], ['stealth sex', '隐秘性交'], ['from outside', '从室外拍摄'], 
+            ['against glass', '贴在玻璃上'], ['frosted glass', '磨砂玻璃'],
+            ['breast press', '乳房贴玻璃'], ['stealth sex', '隐秘性交'], ['from outside', '从室外拍摄'],
             ['x-ray', '透视线'], ['girl face visible', '女孩脸部可见'], ['at least one face visible', '至少有一张脸可见']
           ],
           [
-            ['playing games', '打游戏'], ['holding controller', '手握手柄'], 
-            ['stealth sex', '隐秘性交'], ['implied sex', '暗示性行为'], ['expressionless', '面无表情'], 
+            ['playing games', '打游戏'], ['holding controller', '手握手柄'],
+            ['stealth sex', '隐秘性交'], ['implied sex', '暗示性行为'], ['expressionless', '面无表情'],
             ['upper body normal', '上半身正常'], ['cum string', '精液拉丝'],
             ['boy head out of frame', '男孩头部出框'], ['girl face visible', '女孩脸部可见'],
             ['at least one face visible', '至少有一张脸可见']
@@ -931,18 +1298,18 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
         const templates = [
           [
-            ['ahegao', '阿黑颜'], ['breast', '乳房'], ['buttocks', '臀部'], 
+            ['ahegao', '阿黑颜'], ['breast', '乳房'], ['buttocks', '臀部'],
             ['creampie', '内射'], ['pussy', '阴部'],
             ['girl face visible', '女孩脸部可见'], ['at least one face visible', '至少有一张脸可见']
           ],
           [
-            ['drooling', '流口水'], ['heart in eye', '心形瞳'], ['crying', '抽泣'], 
+            ['drooling', '流口水'], ['heart in eye', '心形瞳'], ['crying', '抽泣'],
             ['breast bounce', '乳房晃动'],
             ['girl face visible', '女孩脸部可见'], ['at least one face visible', '至少有一张脸可见']
           ],
           [
-            ['blush', '脸红'], 
-            ['cum on face', '脸上射精'], ['open mouth', '张嘴'], ['tongue out', '吐舌头'], 
+            ['blush', '脸红'],
+            ['cum on face', '脸上射精'], ['open mouth', '张嘴'], ['tongue out', '吐舌头'],
             ['deep throat', '深喉'],
             ['girl face visible', '女孩脸部可见'], ['at least one face visible', '至少有一张脸可见']
           ]
@@ -983,8 +1350,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       const hasNude = filteredList.some(t => t.raw === 'nude' || t.raw === 'naked' || t.raw === 'completely nude' || t.raw === 'fully nude');
       if (hasNude) {
         const bdsmGear = ['rope', 'handcuffs', 'gag', 'blindfold', 'chains', 'leash', 'collar', 'harness', 'apron', '绳', '绑', '手铐', '口球', '眼罩', '链', '牵引', '项圈', '器具', '围裙'];
-        filteredList = filteredList.filter(t => 
-          (t.category !== 'clothes' && t.category !== 'clothing_materials') || 
+        filteredList = filteredList.filter(t =>
+          (t.category !== 'clothes' && t.category !== 'clothing_materials') ||
           bdsmGear.some(g => t.raw.toLowerCase().includes(g) || (t.zh && t.zh.toLowerCase().includes(g)))
         );
       }
@@ -1008,7 +1375,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       }
       filteredList = expandNudityTags(filteredList);
       setSelectedTags(filteredList);
-      
+
       const styleDisplayNames = {
         bdsm: '束缚调教',
         stealth: '隐奸推荐',
@@ -1057,9 +1424,9 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
     if (isMultiCharacter) {
       const multiStarters = [
-        [['2girls', '两个女孩'], ['duo', '双人']], 
-        [['1girl', '一个女孩'], ['1boy', '一个男孩'], ['couple', '情侣/双人']], 
-        [['3girls', '三个女孩'], ['trio', '三人']], 
+        [['2girls', '两个女孩'], ['duo', '双人']],
+        [['1girl', '一个女孩'], ['1boy', '一个男孩'], ['couple', '情侣/双人']],
+        [['3girls', '三个女孩'], ['trio', '三人']],
         [['group', '群组/多人'], ['multi-person', '多人']]
       ];
       const starter = multiStarters[Math.floor(Math.random() * multiStarters.length)];
@@ -1177,7 +1544,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
         const en = Array.isArray(tag) ? tag[0] : tag;
         return lewdExpressions.some(le => en.toLowerCase().includes(le));
       });
-      const chosenTag = filtered.length > 0 
+      const chosenTag = filtered.length > 0
         ? filtered[Math.floor(Math.random() * filtered.length)]
         : catData.tags[Math.floor(Math.random() * catData.tags.length)];
       const raw = Array.isArray(chosenTag) ? chosenTag[0] : chosenTag;
@@ -1192,7 +1559,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
         const zh = Array.isArray(tag) ? tag[1] : '';
         return bdsmExpressions.some(be => en.toLowerCase().includes(be) || (zh && zh.toLowerCase().includes(be)));
       });
-      const chosenTag = filtered.length > 0 
+      const chosenTag = filtered.length > 0
         ? filtered[Math.floor(Math.random() * filtered.length)]
         : catData.tags[Math.floor(Math.random() * catData.tags.length)];
       const raw = Array.isArray(chosenTag) ? chosenTag[0] : chosenTag;
@@ -1207,7 +1574,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
         const zh = Array.isArray(tag) ? tag[1] : '';
         return stealthExpressions.some(se => en.toLowerCase().includes(se) || (zh && zh.toLowerCase().includes(se)));
       });
-      const chosenTag = filtered.length > 0 
+      const chosenTag = filtered.length > 0
         ? filtered[Math.floor(Math.random() * filtered.length)]
         : catData.tags[Math.floor(Math.random() * catData.tags.length)];
       const raw = Array.isArray(chosenTag) ? chosenTag[0] : chosenTag;
@@ -1226,7 +1593,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
         const zh = Array.isArray(tag) ? tag[1] : '';
         return bdsmPoses.some(bp => en.toLowerCase().includes(bp) || (zh && zh.toLowerCase().includes(bp)));
       });
-      const chosenTag = filtered.length > 0 
+      const chosenTag = filtered.length > 0
         ? filtered[Math.floor(Math.random() * filtered.length)]
         : catData.tags[Math.floor(Math.random() * catData.tags.length)];
       const raw = Array.isArray(chosenTag) ? chosenTag[0] : chosenTag;
@@ -1247,7 +1614,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
         const zh = Array.isArray(tag) ? tag[1] : '';
         return stealthPerspectives.some(sp => en.toLowerCase().includes(sp) || (zh && zh.toLowerCase().includes(sp)));
       });
-      const chosenTag = filtered.length > 0 
+      const chosenTag = filtered.length > 0
         ? filtered[Math.floor(Math.random() * filtered.length)]
         : catData.tags[Math.floor(Math.random() * catData.tags.length)];
       const raw = Array.isArray(chosenTag) ? chosenTag[0] : chosenTag;
@@ -1272,8 +1639,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
     if (hasNude) {
       const bdsmGear = ['rope', 'handcuffs', 'gag', 'blindfold', 'chains', 'leash', 'collar', 'harness', 'apron', '绳', '绑', '手铐', '口球', '眼罩', '链', '牵引', '项圈', '器具', '围裙'];
-      filteredList = filteredList.filter(t => 
-        (t.category !== 'clothes' && t.category !== 'clothing_materials') || 
+      filteredList = filteredList.filter(t =>
+        (t.category !== 'clothes' && t.category !== 'clothing_materials') ||
         bdsmGear.some(g => t.raw.toLowerCase().includes(g) || (t.zh && t.zh.toLowerCase().includes(g)))
       );
     } else {
@@ -1372,14 +1739,14 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
         alert('您的浏览器不支持 File System Access API。请使用最新版的 Chrome, Edge 或 Safari 浏览器访问。');
         return;
       }
-      
+
       const dirHandle = await window.showDirectoryPicker();
       setImporting(true);
       setImportStatus('正在检查数据库...');
-      
+
       let preScannedData = null;
       let mediaDataFileHandle = null;
-      
+
       try {
         // Try to get media-data.json from root of the directory
         mediaDataFileHandle = await dirHandle.getFileHandle('media-data.json');
@@ -1411,13 +1778,13 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       const localImages = await scanLocalDirectory(dirHandle, (status) => {
         setImportStatus(status);
       }, preScannedData);
-      
+
       if (localImages.length === 0) {
         showToast('在该目录下未找到任何支持的媒体文件（图片/音视频）', 'error');
         setImporting(false);
         return;
       }
-      
+
       setImages(localImages);
       setIsLocalImport(true);
       setSelectedCategory('all');
@@ -1484,7 +1851,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!selectedImage) return;
-      
+
       const filtered = getFilteredImages();
       const currentIndex = filtered.findIndex(img => img.id === selectedImage.id);
 
@@ -1503,7 +1870,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
   // Derived states
   const categories = ['all', ...new Set(images.map(img => img.category))];
-  
+
   const models = [...new Set(images
     .map(img => img.metadata?.model)
     .filter(model => model && model.trim() !== '')
@@ -1526,7 +1893,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       if (selectedCategory !== 'all' && img.category !== selectedCategory) {
         return false;
       }
-      
+
       // Metadata filter
       if (onlyWithMetadata && !img.metadata?.hasMetadata) {
         return false;
@@ -1638,11 +2005,11 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
             <span className="logo-icon gradient-bg"><Sparkles size={20} color="#fff" /></span>
             <span className="nav-logo-text gradient-text">PromptMedia</span>
           </a>
-          
+
           <div className="navbar-actions">
             <ul className="nav-links">
               <li>
-                <button 
+                <button
                   className={`nav-link-btn nav-link ${activeTab === 'home' ? 'active' : ''}`}
                   onClick={() => setActiveTab('home')}
                 >
@@ -1650,7 +2017,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 </button>
               </li>
               <li>
-                <button 
+                <button
                   className={`nav-link-btn nav-link ${activeTab === 'gallery' ? 'active' : ''}`}
                   onClick={() => { setActiveTab('gallery'); setSelectedCategory('all'); }}
                 >
@@ -1658,7 +2025,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 </button>
               </li>
               <li>
-                <button 
+                <button
                   className={`nav-link-btn nav-link ${activeTab === 'generator' ? 'active' : ''}`}
                   onClick={() => setActiveTab('generator')}
                 >
@@ -1666,7 +2033,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 </button>
               </li>
               <li>
-                <button 
+                <button
                   className={`nav-link-btn nav-link ${activeTab === 'ai-generator' ? 'active' : ''}`}
                   onClick={() => setActiveTab('ai-generator')}
                 >
@@ -1674,11 +2041,12 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 </button>
               </li>
               <li>
-                <button 
-                  className={`nav-link-btn nav-link ${activeTab === 'guide' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('guide')}
+                <button
+                  className={`nav-link-btn nav-link ${activeTab === 'video-generator' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('video-generator')}
                 >
-                  部署使用说明
+                  <Video size={15} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom' }} />
+                  视频生成
                 </button>
               </li>
             </ul>
@@ -1686,7 +2054,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
             {/* Directory Switcher Controls */}
             <div className="directory-actions">
               {isLocalImport ? (
-                <button 
+                <button
                   className="nav-action-btn load-default-btn"
                   onClick={handleLoadScannedData}
                   title="切换回后端扫描的媒体数据库"
@@ -1695,7 +2063,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   <span>载入默认库</span>
                 </button>
               ) : (
-                <button 
+                <button
                   className="nav-action-btn import-local-btn"
                   onClick={handleImportDirectory}
                   disabled={importing}
@@ -1709,7 +2077,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
             {/* Theme selector widget */}
             <div className="theme-pill-selector">
-              <button 
+              <button
                 className={`theme-pill-btn ${theme === 'fresh-mint' ? 'active' : ''}`}
                 onClick={() => setTheme('fresh-mint')}
                 title="清新雅致"
@@ -1717,7 +2085,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 <Leaf size={14} />
                 <span>清新</span>
               </button>
-              <button 
+              <button
                 className={`theme-pill-btn ${theme === 'cyber-dark' ? 'active' : ''}`}
                 onClick={() => setTheme('cyber-dark')}
                 title="科技暗黑"
@@ -1725,7 +2093,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 <Moon size={14} />
                 <span>暗黑</span>
               </button>
-              <button 
+              <button
                 className={`theme-pill-btn ${theme === 'dynamic-anime' ? 'active' : ''}`}
                 onClick={() => setTheme('dynamic-anime')}
                 title="炫酷动感"
@@ -1740,7 +2108,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
       {/* Main Tab Content */}
       <main className="main-layout animate-fade-in">
-        
+
         {/* HOMEPAGE TAB */}
         {activeTab === 'home' && (
           <div className="home-tab animate-fade-in">
@@ -1830,8 +2198,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     const coverImgObj = catImages.find(img => img.type === 'image');
                     const coverImg = coverImgObj?.path || '';
                     return (
-                      <div 
-                        key={cat} 
+                      <div
+                        key={cat}
                         className="cat-preview-card glass-panel"
                         onClick={() => {
                           setSelectedCategory(cat);
@@ -1861,14 +2229,14 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
           <div className="gallery-tab">
             {/* Gallery Header Controls */}
             <div className="gallery-controls glass-panel animate-fade-in-up">
-              
+
               {/* Top Row: Search and Filter Toggle */}
               <div className="controls-row-top">
                 <div className="search-box-wrapper">
                   <Search size={18} className="search-icon" />
-                  <input 
-                    type="text" 
-                    placeholder="搜索提示词、模型、采样器、文件名..." 
+                  <input
+                    type="text"
+                    placeholder="搜索提示词、模型、采样器、文件名..."
                     className="search-input"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1879,8 +2247,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     </button>
                   )}
                 </div>
-                
-                <button 
+
+                <button
                   className={`btn-secondary filter-toggle-btn ${showFiltersPanel || selectedModel || selectedSampler || onlyWithMetadata ? 'active-filters' : ''}`}
                   onClick={() => setShowFiltersPanel(!showFiltersPanel)}
                 >
@@ -1897,8 +2265,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 <div className="advanced-filters-panel animate-fade-in">
                   <div className="filter-group">
                     <label>采样大模型</label>
-                    <select 
-                      value={selectedModel} 
+                    <select
+                      value={selectedModel}
                       onChange={(e) => setSelectedModel(e.target.value)}
                       className="filter-select"
                     >
@@ -1911,8 +2279,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
                   <div className="filter-group">
                     <label>采样器 (Sampler)</label>
-                    <select 
-                      value={selectedSampler} 
+                    <select
+                      value={selectedSampler}
                       onChange={(e) => setSelectedSampler(e.target.value)}
                       className="filter-select"
                     >
@@ -1925,8 +2293,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
                   <div className="filter-group checkbox-group">
                     <label className="checkbox-label">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={onlyWithMetadata}
                         onChange={(e) => setOnlyWithMetadata(e.target.checked)}
                         className="filter-checkbox"
@@ -1937,7 +2305,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
                   {/* Reset Filters button */}
                   {(selectedModel || selectedSampler || onlyWithMetadata) && (
-                    <button 
+                    <button
                       className="btn-secondary reset-filters-btn"
                       onClick={() => {
                         setSelectedModel('');
@@ -1962,8 +2330,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   >
                     {getMediaCategoryDisplayName(cat)}
                     <span className="tab-count-badge">
-                      {cat === 'all' 
-                        ? images.length 
+                      {cat === 'all'
+                        ? images.length
                         : images.filter(img => img.category === cat).length
                       }
                     </span>
@@ -1983,7 +2351,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 <ImageIcon size={48} className="empty-icon" />
                 <h3>没有找到匹配的媒体</h3>
                 <p>尝试清除搜索词或更改筛选条件，或者放入媒体文件运行扫描脚本。</p>
-                <button 
+                <button
                   className="btn-secondary"
                   onClick={() => {
                     setSelectedCategory('all');
@@ -1999,20 +2367,20 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
             ) : (
               <div className="masonry-grid animate-fade-in">
                 {filteredImages.map(img => (
-                  <div 
-                    key={img.id} 
+                  <div
+                    key={img.id}
                     className="masonry-item glass-card"
                     onClick={() => setSelectedImage(img)}
                   >
                     <div className={`image-card-img-wrapper ${img.type || 'image'}-wrapper`}>
                       {img.type === 'video' ? (
                         <div className="video-container">
-                          <video 
-                            src={img.path} 
+                          <video
+                            src={img.path}
                             preload="metadata"
-                            muted 
-                            loop 
-                            playsInline 
+                            muted
+                            loop
+                            playsInline
                             className="grid-video"
                             onMouseEnter={(e) => {
                               e.target.play().catch(err => console.log("Video play interrupted", err));
@@ -2093,21 +2461,21 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
               <div className="config-section">
                 <label className="config-label">1. 目标大模型风格</label>
                 <div className="model-presets-grid">
-                  <button 
+                  <button
                     className={`model-preset-btn ${genModel === 'pony' ? 'active' : ''}`}
                     onClick={() => { setGenModel('pony'); }}
                   >
                     <div className="preset-name">Pony Diffusion V6</div>
                     <div className="preset-desc">基于 score 评分的前缀风格</div>
                   </button>
-                  <button 
+                  <button
                     className={`model-preset-btn ${genModel === 'illustrious' ? 'active' : ''}`}
                     onClick={() => { setGenModel('illustrious'); }}
                   >
                     <div className="preset-name">Illustrious XL</div>
                     <div className="preset-desc">角色/版权在前，画质修饰在后</div>
                   </button>
-                  <button 
+                  <button
                     className={`model-preset-btn ${genModel === 'anime' ? 'active' : ''}`}
                     onClick={() => { setGenModel('anime'); }}
                   >
@@ -2131,13 +2499,13 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 <div className="config-section">
                   <label className="config-label">3. 搜索范围</label>
                   <div className="search-scope-selector">
-                    <button 
+                    <button
                       className={`scope-btn ${searchScope === 'global' ? 'active' : ''}`}
                       onClick={() => setSearchScope('global')}
                     >
                       全局搜索
                     </button>
-                    <button 
+                    <button
                       className={`scope-btn ${searchScope === 'category' ? 'active' : ''}`}
                       onClick={() => setSearchScope('category')}
                     >
@@ -2146,7 +2514,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   </div>
                 </div>
               </div>
-              
+
               <div className="config-row-three">
                 <div className="config-section">
                   <label className="config-label">4. 灵感与随机推荐 (根据标签库智能推荐不同风格)</label>
@@ -2222,8 +2590,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     <div className="tags-search-header">
                       <div className="search-box-wrapper">
                         <Search size={16} className="search-icon" />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder={searchScope === 'global' ? "在全部 28 个分类中搜索标签..." : `在“${tagDatabase?.[selectedGenCategory] ? `${tagDatabase[selectedGenCategory].displayName} (${selectedGenCategory})` : ''}”分类中搜索...`}
                           className="search-input tag-search"
                           value={genSearchQuery}
@@ -2341,18 +2709,18 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                           <div key={`${tagObj.raw}-${idx}`} className="selected-tag-chip">
                             <span className="chip-category-label">{tagDatabase?.[tagObj.category] ? `${tagDatabase[tagObj.category].displayName} (${tagObj.category})` : tagObj.category}</span>
                             <span className="chip-name">{tagObj.zh ? `${tagObj.clean} (${tagObj.zh})` : tagObj.clean}</span>
-                            
+
                             <div className="weight-adjuster">
-                              <button 
-                                className="weight-btn minus" 
+                              <button
+                                className="weight-btn minus"
                                 onClick={() => handleAdjustWeight(tagObj.raw, -0.1)}
                                 title="减小权重 (-0.1)"
                               >
                                 <Minus size={10} />
                               </button>
                               <span className="weight-val">{tagObj.weight.toFixed(1)}</span>
-                              <button 
-                                className="weight-btn plus" 
+                              <button
+                                className="weight-btn plus"
                                 onClick={() => handleAdjustWeight(tagObj.raw, 0.1)}
                                 title="增大权重 (+0.1)"
                               >
@@ -2361,8 +2729,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                             </div>
 
                             <div className="order-adjuster">
-                              <button 
-                                className="order-btn" 
+                              <button
+                                className="order-btn"
                                 disabled={idx === 0}
                                 onClick={() => {
                                   const list = [...selectedTags];
@@ -2375,8 +2743,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                               >
                                 ◀
                               </button>
-                              <button 
-                                className="order-btn" 
+                              <button
+                                className="order-btn"
                                 disabled={idx === selectedTags.length - 1}
                                 onClick={() => {
                                   const list = [...selectedTags];
@@ -2391,8 +2759,8 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                               </button>
                             </div>
 
-                            <button 
-                              className="chip-delete-btn" 
+                            <button
+                              className="chip-delete-btn"
                               onClick={() => setSelectedTags(selectedTags.filter(t => t.raw !== tagObj.raw))}
                               title="移除标签"
                             >
@@ -2414,7 +2782,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                         <div className="prompt-output-box positive-output">
                           <div className="output-header">
                             <span className="output-label">Positive Prompt (正向提示词)</span>
-                            <button 
+                            <button
                               className={`copy-btn ${copiedField === 'genPositive' ? 'copied' : ''}`}
                               onClick={() => copyToClipboard(positive, 'genPositive', 'Positive prompt copied!')}
                             >
@@ -2422,7 +2790,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                               <span>{copiedField === 'genPositive' ? '已复制' : '复制正向提示词'}</span>
                             </button>
                           </div>
-                          <textarea 
+                          <textarea
                             className="output-textarea"
                             value={positive}
                             readOnly
@@ -2433,7 +2801,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                         <div className="prompt-output-box negative-output">
                           <div className="output-header">
                             <span className="output-label">Negative Prompt (负向提示词)</span>
-                            <button 
+                            <button
                               className={`copy-btn ${copiedField === 'genNegative' ? 'copied' : ''}`}
                               onClick={() => copyToClipboard(negative, 'genNegative', 'Negative prompt copied!')}
                             >
@@ -2441,7 +2809,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                               <span>{copiedField === 'genNegative' ? '已复制' : '复制负向提示词'}</span>
                             </button>
                           </div>
-                          <textarea 
+                          <textarea
                             className="output-textarea negative"
                             value={negative}
                             readOnly
@@ -2496,37 +2864,37 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   <div className="config-fields-grid">
                     <div className="input-group">
                       <label className="field-label">API 接口地址 (Base URL)</label>
-                      <input 
-                        type="text" 
-                        value={llmApiUrl} 
-                        onChange={(e) => setLlmApiUrl(e.target.value)} 
+                      <input
+                        type="text"
+                        value={llmApiUrl}
+                        onChange={(e) => setLlmApiUrl(e.target.value)}
                         placeholder="http://localhost:11434/v1"
                       />
                     </div>
                     <div className="input-group">
                       <label className="field-label">API Key 密钥 {llmPreset === 'ollama' && '(本地模型通常不需要)'}</label>
-                      <input 
-                        type="password" 
-                        value={llmApiKey} 
-                        onChange={(e) => setLlmApiKey(e.target.value)} 
+                      <input
+                        type="password"
+                        value={llmApiKey}
+                        onChange={(e) => setLlmApiKey(e.target.value)}
                         placeholder={llmPreset === 'ollama' ? '无需填写' : 'sk-...'}
                       />
                     </div>
                     <div className="input-group">
                       <div className="label-row">
                         <label className="field-label">模型名称 (Model Name)</label>
-                        <button 
-                          className="text-link-btn" 
-                          onClick={handleFetchLoadedModels} 
+                        <button
+                          className="text-link-btn"
+                          onClick={handleFetchLoadedModels}
                           title="自动从服务商接口拉取当前已加载的模型名称"
                         >
                           自动获取已加载模型
                         </button>
                       </div>
-                      <input 
-                        type="text" 
-                        value={llmModel} 
-                        onChange={(e) => setLlmModel(e.target.value)} 
+                      <input
+                        type="text"
+                        value={llmModel}
+                        onChange={(e) => setLlmModel(e.target.value)}
                         placeholder="llama3:latest"
                       />
                     </div>
@@ -2536,7 +2904,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     <button className="test-conn-btn" onClick={testLlmConnection} disabled={aiConnectionTest === 'testing'}>
                       {aiConnectionTest === 'testing' ? '正在测试...' : '测试接口连接'}
                     </button>
-                    
+
                     {aiConnectionTest === 'success' && (
                       <span className="status-badge success"><Check size={14} /> 连接正常</span>
                     )}
@@ -2558,7 +2926,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   <h3 className="section-title">Step 1. 选择艺术风格</h3>
                   <div className="ai-style-grid">
                     {AI_STYLES.map(style => (
-                      <button 
+                      <button
                         key={style.id}
                         className={`ai-style-card ${aiSelectedStyle === style.id ? 'active' : ''}`}
                         onClick={() => {
@@ -2589,7 +2957,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   <h3 className="section-title">Step 2. 画面构图视角</h3>
                   <div className="ai-options-pills">
                     {AI_COMPOSITIONS.map(comp => (
-                      <button 
+                      <button
                         key={comp.id}
                         className={`option-pill ${aiSelectedComposition === comp.id ? 'active' : ''}`}
                         onClick={() => setAiSelectedComposition(comp.id)}
@@ -2605,7 +2973,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   <h3 className="section-title">Step 3. 画面光影氛围</h3>
                   <div className="ai-options-pills">
                     {AI_LIGHTINGS.map(light => (
-                      <button 
+                      <button
                         key={light.id}
                         className={`option-pill ${aiSelectedLighting === light.id ? 'active' : ''}`}
                         onClick={() => setAiSelectedLighting(light.id)}
@@ -2623,7 +2991,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 <div className="ai-section">
                   <h3 className="section-title">Step 4. 输入您的创意脑洞</h3>
                   <div className="idea-input-wrapper">
-                    <textarea 
+                    <textarea
                       className="idea-textarea"
                       value={aiUserIdea}
                       onChange={(e) => setAiUserIdea(e.target.value)}
@@ -2635,7 +3003,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
                 {/* Generate Button */}
                 <div className="generate-btn-container">
-                  <button 
+                  <button
                     className={`ai-generate-submit-btn ${aiIsGenerating ? 'generating' : ''}`}
                     onClick={handleGenerateAIPrompt}
                     disabled={aiIsGenerating}
@@ -2658,7 +3026,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       <div className="result-card">
                         <div className="result-card-header">
                           <h4>✨ 英文优化提示词 (Copy to Generate)</h4>
-                          <button 
+                          <button
                             className="result-copy-btn"
                             onClick={() => {
                               navigator.clipboard.writeText(aiResultPrompt);
@@ -2677,7 +3045,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                         <div className="result-card mt-3">
                           <div className="result-card-header">
                             <h4>📝 中文对照释义 (Chinese Translation)</h4>
-                            <button 
+                            <button
                               className="result-copy-btn"
                               onClick={() => {
                                 navigator.clipboard.writeText(aiResultTranslation);
@@ -2692,7 +3060,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="result-tips">
                         <p>💡 提示：本工具生成的自然语言提示词已完美适配 Z-Image、Flux.1、Stable Diffusion 3 以及 Midjourney 模型。直接复制并在上述生图工具中运行，可获得无与伦比的精细度和场景还原度！</p>
                       </div>
@@ -2705,6 +3073,509 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIDEO GENERATOR TAB */}
+        {activeTab === 'video-generator' && (
+          <div className="video-generator-tab animate-fade-in">
+            {/* Top Sub-Navigation Header matching reference image */}
+            <div className="video-top-header glass-panel">
+              <div className="video-header-left">
+                <div className="video-header-title">
+                  <Video size={20} className="title-icon" />
+                  <span>视觉模型</span>
+                </div>
+                <div className="video-header-modes">
+                  <button
+                    className={`mode-btn ${videoSubTab === 'i2v' ? 'active' : ''}`}
+                    onClick={() => setVideoSubTab('i2v')}
+                  >
+                    图生视频
+                  </button>
+                  <button
+                    className={`mode-btn ${videoSubTab === 't2v' ? 'active' : ''}`}
+                    onClick={() => setVideoSubTab('t2v')}
+                  >
+                    文生视频
+                  </button>
+                  <button
+                    className={`mode-btn ${videoSubTab === 'r2v' ? 'active' : ''}`}
+                    onClick={() => setVideoSubTab('r2v')}
+                  >
+                    参考生视频
+                  </button>
+                  <button
+                    className={`mode-btn ${videoSubTab === 'edit' ? 'active' : ''}`}
+                    onClick={() => setVideoSubTab('edit')}
+                  >
+                    视频编辑
+                  </button>
+                </div>
+              </div>
+
+              <div className="video-header-right">
+                <div className="video-filter-tabs">
+                  <button
+                    className={`v-filter-pill ${videoFilterSubTab === 'all' ? 'active' : ''}`}
+                    onClick={() => setVideoFilterSubTab('all')}
+                  >
+                    全部
+                  </button>
+                  <button
+                    className={`v-filter-pill ${videoFilterSubTab === 'i2v' ? 'active' : ''}`}
+                    onClick={() => setVideoFilterSubTab('i2v')}
+                  >
+                    图生视频
+                  </button>
+                  <button
+                    className={`v-filter-pill ${videoFilterSubTab === 't2v' ? 'active' : ''}`}
+                    onClick={() => setVideoFilterSubTab('t2v')}
+                  >
+                    文生视频
+                  </button>
+                  <button
+                    className={`v-filter-pill ${videoFilterSubTab === 'r2v' ? 'active' : ''}`}
+                    onClick={() => setVideoFilterSubTab('r2v')}
+                  >
+                    参考生视频
+                  </button>
+                  <button
+                    className={`v-filter-pill ${videoFilterSubTab === 'edit' ? 'active' : ''}`}
+                    onClick={() => setVideoFilterSubTab('edit')}
+                  >
+                    视频编辑
+                  </button>
+                </div>
+
+                <div className="video-model-filter-dropdown">
+                  <select
+                    value={videoFilterModel}
+                    onChange={(e) => setVideoFilterModel(e.target.value)}
+                    className="v-model-select"
+                  >
+                    <option value="all">全部模型</option>
+                    {availableVideoModels.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Workspace Split */}
+            <div className="video-workspace-layout mt-4">
+              {/* Left Column: Video Controls Sidebar */}
+              <div className="video-controls-panel glass-panel">
+
+                {/* Model Selector Dropdown */}
+                <div className="video-form-group">
+                  <label className="v-form-label">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>生成模型</span>
+                      <button
+                        className="v-settings-btn"
+                        onClick={() => setShowAddModelModal(!showAddModelModal)}
+                        title="添加自定义新模型"
+                        style={{ color: 'var(--primary-hover)', fontWeight: '600' }}
+                      >
+                        <Plus size={13} /> 添加模型
+                      </button>
+                    </div>
+                    <button className="v-settings-btn" onClick={() => setShowVideoApiSettings(!showVideoApiSettings)} title="配置 API Key">
+                      <Settings size={14} /> 接口设置
+                    </button>
+                  </label>
+                  <div className="v-model-picker-wrapper">
+                    <select
+                      className="v-model-picker"
+                      value={videoModel}
+                      onChange={(e) => setVideoModel(e.target.value)}
+                    >
+                      {availableVideoModels
+                        .filter(m => !m.mode || m.mode === videoSubTab)
+                        .map(model => (
+                          <option key={model.id} value={model.id}>
+                            🎬 {model.id} ({model.tag})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Collapsible Custom Model Creator Form */}
+                {showAddModelModal && (
+                  <div className="v-api-settings-panel glass-panel animate-fade-in mb-3">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>✨ 添加自定义视频模型</span>
+                      <button className="text-link-btn" onClick={() => setShowAddModelModal(false)}><X size={14} /></button>
+                    </div>
+                    <div className="input-group">
+                      <label className="field-label">模型标识 / 名称 (Model ID)</label>
+                      <input
+                        type="text"
+                        value={newModelName}
+                        onChange={(e) => setNewModelName(e.target.value)}
+                        placeholder="例如: wanx2.1-i2v-plus / cogvideo-fun"
+                      />
+                    </div>
+                    <div className="input-group mt-2">
+                      <label className="field-label">显示名称 / 描述标签 (Tag)</label>
+                      <input
+                        type="text"
+                        value={newModelTag}
+                        onChange={(e) => setNewModelTag(e.target.value)}
+                        placeholder="例如: 通义万相 2.1 高清图生"
+                      />
+                    </div>
+                    <button
+                      className="v-action-btn primary mt-3"
+                      onClick={handleAddCustomModel}
+                      style={{ width: '100%', padding: '8px' }}
+                    >
+                      确认添加新模型
+                    </button>
+                  </div>
+                )}
+
+                {/* Collapsible API Settings Panel */}
+                {showVideoApiSettings && (
+                  <div className="v-api-settings-panel glass-panel animate-fade-in mb-3">
+                    <div className="input-group">
+                      <label className="field-label">阿里 DashScope API Key</label>
+                      <input
+                        type="password"
+                        value={dashscopeApiKey}
+                        onChange={(e) => setDashscopeApiKey(e.target.value)}
+                        placeholder="sk-..."
+                      />
+                      <span className="field-hint">调用视频合成 API 必需提供有效的 DashScope API Key。</span>
+                    </div>
+                    <div className="input-group mt-2">
+                      <label className="field-label">视频合成 API Base URL</label>
+                      <input
+                        type="text"
+                        value={videoApiUrl}
+                        onChange={(e) => setVideoApiUrl(e.target.value)}
+                        placeholder="https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Video Upload Box if Video Editing */}
+                {videoSubTab === 'edit' ? (
+                  <div className="video-form-group">
+                    <label className="v-form-label">
+                      <span>上传需要编辑的原视频 (Video)</span>
+                      <span className="v-required">*</span>
+                    </label>
+                    <div className="v-image-upload-box">
+                      {videoFilePreview ? (
+                        <div className="v-uploaded-preview">
+                          <video src={videoFilePreview} controls style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', background: '#000' }} />
+                          <button className="remove-img-btn" onClick={() => setVideoFilePreview(null)} title="移除视频">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="v-upload-dropzone">
+                          <Film size={28} className="upload-icon" />
+                          <span>点击或拖拽原视频文件至此处上传</span>
+                          <span className="upload-subtext">支持 MP4, WebM, MOV 格式 (建议 1080P/720P)</span>
+                          <input type="file" accept="video/*" onChange={handleVideoFileUpload} style={{ display: 'none' }} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                ) : (videoSubTab === 'i2v' || videoSubTab === 'r2v') && (
+                  <div className="video-form-group">
+                    <label className="v-form-label">
+                      <span>上传源图 / 参考图</span>
+                      <span className="v-required">*</span>
+                    </label>
+                    <div className="v-image-upload-box">
+                      {videoImagePreview ? (
+                        <div className="v-uploaded-preview">
+                          <img src={videoImagePreview} alt="Uploaded source" />
+                          <button className="remove-img-btn" onClick={() => setVideoImagePreview(null)} title="移除图片">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="v-upload-dropzone">
+                          <Upload size={24} className="upload-icon" />
+                          <span>点击或将图片拖拽至此处上传</span>
+                          <span className="upload-subtext">支持 JPG, PNG, WEBP (建议比例 16:9 或 1:1)</span>
+                          <input type="file" accept="image/*" onChange={handleVideoImageUpload} style={{ display: 'none' }} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Prompt Textarea */}
+                <div className="video-form-group">
+                  <label className="v-form-label">
+                    <span>提示词</span>
+                    <span className="v-required">*</span>
+                  </label>
+                  <textarea
+                    className="v-prompt-textarea"
+                    rows={4}
+                    value={videoPrompt}
+                    onChange={(e) => setVideoPrompt(e.target.value)}
+                    placeholder="请输入对视频画面的详细动效描述，例如：镜头向前移动，展示动作与微表情变化..."
+                  />
+
+                  {/* Sample Prompt Chips */}
+                  <div className="v-example-prompts">
+                    <span className="example-label">示例 Prompt</span>
+                    <div className="example-chips-flow">
+                      {VIDEO_PROMPT_EXAMPLES.map((item, idx) => (
+                        <button
+                          key={idx}
+                          className="v-example-chip"
+                          onClick={() => setVideoPrompt(item.text)}
+                          title={item.text}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                      <button
+                        className="v-example-chip refresh-chip"
+                        onClick={() => {
+                          const randomEx = VIDEO_PROMPT_EXAMPLES[Math.floor(Math.random() * VIDEO_PROMPT_EXAMPLES.length)];
+                          setVideoPrompt(randomEx.text);
+                        }}
+                        title="随机切换示例"
+                      >
+                        <RefreshCw size={12} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resolution options */}
+                <div className="video-form-group">
+                  <label className="v-form-label">清晰度</label>
+                  <div className="v-pills-row">
+                    <button
+                      className={`v-select-pill ${videoResolution === '720P' ? 'active' : ''}`}
+                      onClick={() => setVideoResolution('720P')}
+                    >
+                      720P
+                    </button>
+                    <button
+                      className={`v-select-pill ${videoResolution === '1080P' ? 'active' : ''}`}
+                      onClick={() => setVideoResolution('1080P')}
+                    >
+                      1080P
+                    </button>
+                  </div>
+                </div>
+
+                {/* Aspect Ratio options */}
+                <div className="video-form-group">
+                  <label className="v-form-label">宽高比</label>
+                  <div className="v-ratio-grid">
+                    {['16:9', '9:16', '1:1', '4:3', '3:4'].map(ratio => (
+                      <button
+                        key={ratio}
+                        className={`v-ratio-btn ${videoAspectRatio === ratio ? 'active' : ''}`}
+                        onClick={() => setVideoAspectRatio(ratio)}
+                      >
+                        {ratio}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Duration slider */}
+                <div className="video-form-group">
+                  <div className="v-slider-header">
+                    <label className="v-form-label mb-0">视频时长(秒)</label>
+                    <span className="v-slider-value">{videoDuration}</span>
+                  </div>
+                  <div className="v-slider-wrapper">
+                    <input
+                      type="range"
+                      min={3}
+                      max={15}
+                      step={1}
+                      value={videoDuration}
+                      onChange={(e) => setVideoDuration(Number(e.target.value))}
+                      className="v-range-slider"
+                    />
+                    <div className="v-slider-marks">
+                      <span>3</span>
+                      <span>15</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Random Seed */}
+                <div className="video-form-group">
+                  <label className="v-form-label">
+                    <span>随机种子</span>
+                    <HelpCircle size={13} className="help-icon" title="保持种子相同可复现相似的帧序列" />
+                  </label>
+                  <div className="v-seed-input-wrapper">
+                    <input
+                      type="number"
+                      className="v-seed-input"
+                      value={videoSeed}
+                      onChange={(e) => setVideoSeed(Number(e.target.value))}
+                    />
+                    <button
+                      className="v-seed-random-btn"
+                      onClick={() => setVideoSeed(Math.floor(Math.random() * 1000000000))}
+                      title="生成随机种子"
+                    >
+                      <Shuffle size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Generate Action Button */}
+                <div className="video-submit-container">
+                  <button
+                    className={`v-generate-btn ${videoIsGenerating ? 'generating' : ''}`}
+                    onClick={handleGenerateVideo}
+                    disabled={videoIsGenerating}
+                  >
+                    <Zap size={18} />
+                    <span>{videoIsGenerating ? '视频实时合成中...' : '开始生成'}</span>
+                  </button>
+                  <p className="v-cost-subtext">
+                    生成 1 个视频，约扣费 4.5 元 <Info size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                  </p>
+                </div>
+
+                <div className="v-disclaimer-footer">
+                  所有内容均由人工智能模型生成，结果请与观察保持一致，不代表我们的立场和观点
+                </div>
+              </div>
+
+              {/* Right Column: Video Gallery & Results Showcase */}
+              <div className="video-display-panel glass-panel">
+                <div className="v-display-header">
+                  <h3>🎬 视频合成成果库 ({
+                    videoResults.filter(v =>
+                      (videoFilterModel === 'all' || v.model === videoFilterModel) &&
+                      (videoFilterSubTab === 'all' || v.subTab === videoFilterSubTab)
+                    ).length
+                  })</h3>
+                </div>
+
+                {/* Generating Loading Overlay State */}
+                {videoIsGenerating && (
+                  <div className="video-generating-card glass-panel animate-fade-in mb-4">
+                    <div className="v-loading-spinner-wrapper">
+                      <div className="loading-spinner"></div>
+                      <Film size={28} className="spinner-center-icon" />
+                    </div>
+                    <div className="v-generating-info">
+                      <h4>正在通过阿里 {videoModel} 渲染视频...</h4>
+                      <p className="status-step-text">{videoProgressStatus}</p>
+                      <div className="v-progress-bar-bg">
+                        <div className="v-progress-bar-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Video Cards Grid */}
+                <div className="video-results-grid">
+                  {videoResults
+                    .filter(v =>
+                      (videoFilterModel === 'all' || v.model === videoFilterModel) &&
+                      (videoFilterSubTab === 'all' || v.subTab === videoFilterSubTab)
+                    )
+                    .map(item => (
+                      <div key={item.id} className="video-item-card glass-panel animate-fade-in">
+                        <div className="v-card-media-wrapper">
+                          {item.status === 'PENDING' || item.status === 'RUNNING' ? (
+                            <div className="v-task-pending-placeholder">
+                              <div className="loading-spinner"></div>
+                              <span className="v-pending-text">⏳ 正在渲染 ({item.status || 'RUNNING'})</span>
+                              <span className="v-pending-subtext">{item.progressText || '后台计算中...'}</span>
+                              <span className="v-pending-taskid">Task ID: {item.taskId}</span>
+                            </div>
+                          ) : item.status === 'FAILED' ? (
+                            <div className="v-task-failed-placeholder">
+                              <AlertCircle size={28} style={{ color: 'var(--accent-rose)' }} />
+                              <span className="v-failed-text">⚠️ 渲染产生错误</span>
+                              <span className="v-failed-subtext">{item.errorMsg || '任务异常中断'}</span>
+                              <span className="v-pending-taskid">Task ID: {item.taskId}</span>
+                            </div>
+                          ) : (
+                            <video
+                              src={item.path}
+                              controls
+                              loop
+                              preload="metadata"
+                              className="v-card-video"
+                            />
+                          )}
+                          <div className="v-card-badges">
+                            <span className="v-badge model-badge">{item.model}</span>
+                            <span className="v-badge quality-badge">{item.resolution}</span>
+                            <span className="v-badge ratio-badge">{item.aspectRatio}</span>
+                            {item.status && <span className={`v-badge status-badge-${item.status.toLowerCase()}`}>{item.status}</span>}
+                          </div>
+                        </div>
+
+                        <div className="v-card-details">
+                          <div className="v-card-title-row">
+                            <h4>{item.title}</h4>
+                            <span className="v-card-time">{item.createdAt}</span>
+                          </div>
+
+                          <p className="v-card-prompt">{item.prompt}</p>
+
+                          <div className="v-card-meta-bar">
+                            <span className="v-meta-tag">时长: {item.duration}s</span>
+                            <span className="v-meta-tag">Seed: {item.seed}</span>
+                          </div>
+
+                          <div className="v-card-actions">
+                            <button
+                              className="v-action-btn"
+                              onClick={() => {
+                                copyToClipboard(item.prompt, item.id, '视频提示词已复制！');
+                              }}
+                            >
+                              {copiedField === item.id ? <Check size={14} /> : <Copy size={14} />}
+                              <span>{copiedField === item.id ? '已复制' : '复制 Prompt'}</span>
+                            </button>
+
+                            {item.status === 'PENDING' || item.status === 'RUNNING' || item.status === 'FAILED' ? (
+                              <button
+                                className="v-action-btn primary"
+                                onClick={() => checkSingleTask(item.id, item.taskId, dashscopeApiKey, videoApiUrl)}
+                              >
+                                <RefreshCw size={14} />
+                                <span>刷新状态</span>
+                              </button>
+                            ) : (
+                              <a
+                                href={item.path}
+                                download={`${item.model}_${item.id}.mp4`}
+                                className="v-action-btn primary"
+                              >
+                                <Download size={14} />
+                                <span>下载视频</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
@@ -2758,7 +3629,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 <section id="use">
                   <h2>3. 使用说明</h2>
                   <div className="guide-methods-container">
-                    
+
                     <div className="guide-method-card glass-panel">
                       <div className="method-badge gradient-bg">最简单 (免 Node)</div>
                       <h3>📁 方法一：网页前端直连切换 (推荐)</h3>
@@ -2818,7 +3689,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 <section id="deploy">
                   <h2>5. 静态部署与平铺包分发指南</h2>
                   <p>由于本项目为完全零后端架构，极易部署和打包分享：</p>
-                  
+
                   <div className="deploy-method">
                     <h3>📦 1. 离线平铺分发包 (适合免 Node 发送给他人使用)</h3>
                     <ol>
@@ -2860,22 +3731,22 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       {selectedImage && (
         <div className="modal-overlay animate-fade-in" onClick={() => setSelectedImage(null)}>
           <div className="modal-wrapper glass-panel" onClick={(e) => e.stopPropagation()}>
-            
+
             {/* Close button */}
             <button className="modal-close-btn" onClick={() => setSelectedImage(null)}>
               <X size={24} />
             </button>
 
             {/* Navigation arrows */}
-            <button 
-              className="modal-nav-btn prev" 
+            <button
+              className="modal-nav-btn prev"
               onClick={handlePrevImage}
               disabled={getFilteredImages().findIndex(img => img.id === selectedImage.id) === 0}
             >
               <ChevronLeft size={36} />
             </button>
-            <button 
-              className="modal-nav-btn next" 
+            <button
+              className="modal-nav-btn next"
               onClick={handleNextImage}
               disabled={getFilteredImages().findIndex(img => img.id === selectedImage.id) === getFilteredImages().length - 1}
             >
@@ -2884,17 +3755,17 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
             {/* Modal Grid Split: Left = Image, Right = Parameters */}
             <div className="modal-content-grid">
-              
+
               {/* Left Side: Media display */}
               <div className="modal-left-panel">
                 <div className="modal-image-container">
                   {selectedImage.type === 'video' ? (
-                    <video 
-                      src={selectedImage.path} 
-                      controls 
-                      autoPlay 
-                      loop 
-                      className="modal-video" 
+                    <video
+                      src={selectedImage.path}
+                      controls
+                      autoPlay
+                      loop
+                      className="modal-video"
                       style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '8px' }}
                     />
                   ) : selectedImage.type === 'audio' ? (
@@ -2902,11 +3773,11 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       <div className="audio-disc-animation">
                         <svg viewBox="0 0 24 24" width="80" height="80" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="disc-icon"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
                       </div>
-                      <audio 
-                        src={selectedImage.path} 
-                        controls 
-                        autoPlay 
-                        className="modal-audio" 
+                      <audio
+                        src={selectedImage.path}
+                        controls
+                        autoPlay
+                        className="modal-audio"
                         style={{ width: '100%', marginTop: '2rem' }}
                       />
                     </div>
@@ -2919,7 +3790,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     {getMediaCategoryDisplayName(selectedImage.category)}
                   </span>
                   <div className="action-buttons-group">
-                    <button 
+                    <button
                       className="btn-primary"
                       onClick={() => downloadImage(selectedImage.path, selectedImage.filename)}
                     >
@@ -2942,13 +3813,13 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 {/* If image has ComfyUI Metadata, render detailed parameters */}
                 {selectedImage.metadata?.hasMetadata ? (
                   <div className="metadata-container">
-                    
+
                     {/* Prompt Box */}
                     {selectedImage.metadata.prompt && (
                       <div className="parameter-card prompt-card">
                         <div className="card-header">
                           <span className="parameter-label">🎨 Positive Prompt (正向提示词)</span>
-                          <button 
+                          <button
                             className={`copy-btn ${copiedField === 'prompt' ? 'copied' : ''}`}
                             onClick={() => copyToClipboard(selectedImage.metadata.prompt, 'prompt', 'Positive prompt copied!')}
                           >
@@ -2967,7 +3838,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       <div className="parameter-card negative-prompt-card">
                         <div className="card-header">
                           <span className="parameter-label">🚫 Negative Prompt (负向提示词)</span>
-                          <button 
+                          <button
                             className={`copy-btn ${copiedField === 'negPrompt' ? 'copied' : ''}`}
                             onClick={() => copyToClipboard(selectedImage.metadata.negativePrompt, 'negPrompt', 'Negative prompt copied!')}
                           >
@@ -2983,12 +3854,12 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
 
                     {/* Param Grid */}
                     <div className="params-value-grid">
-                      
+
                       <div className="param-value-item">
                         <span className="param-label">Seed (种子)</span>
                         <div className="param-value-with-copy">
                           <span className="param-value font-mono">{selectedImage.metadata.seed}</span>
-                          <button 
+                          <button
                             className="inline-copy-btn"
                             onClick={() => copyToClipboard(selectedImage.metadata.seed?.toString(), 'seed', 'Seed copied!')}
                           >
@@ -3036,26 +3907,26 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     {/* Raw JSON / Workflow viewer section */}
                     <div className="raw-workflow-section">
                       <div className="raw-tabs">
-                        <button 
+                        <button
                           className={`raw-tab-btn ${rawTab === 'prompt' ? 'active' : ''}`}
                           onClick={() => setRawTab('prompt')}
                         >
                           <Code size={14} /> Prompt API Graph (节点配置)
                         </button>
-                        <button 
+                        <button
                           className={`raw-tab-btn ${rawTab === 'workflow' ? 'active' : ''}`}
                           onClick={() => setRawTab('workflow')}
                         >
                           <Info size={14} /> Workflow UI Graph (工作流)
                         </button>
                       </div>
-                      
+
                       <div className="raw-content">
                         {rawTab === 'prompt' ? (
                           <div className="raw-json-wrapper">
                             <div className="raw-json-header">
                               <span>ComfyUI API Format Graph JSON</span>
-                              <button 
+                              <button
                                 className="copy-btn btn-secondary"
                                 onClick={() => copyToClipboard(JSON.stringify(selectedImage.metadata.rawPrompt, null, 2), 'rawPrompt', 'API Graph copied!')}
                               >
@@ -3071,7 +3942,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                           <div className="raw-json-wrapper">
                             <div className="raw-json-header">
                               <span>ComfyUI Workflow UI Graph JSON</span>
-                              <button 
+                              <button
                                 className="copy-btn btn-secondary"
                                 onClick={() => copyToClipboard(JSON.stringify(selectedImage.metadata.rawWorkflow, null, 2), 'rawWorkflow', 'Workflow Graph copied!')}
                               >

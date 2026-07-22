@@ -129,3 +129,26 @@ npm run build
 - **自动化扫描流水线:** 如果使用 Git 进行协作管理，可以将 `npm run scan` 写在 Git 客户端的 `pre-commit` 钩子中，每次提交代码时自动触发扫描，保障远程静态库数据永远是最新的。
 - **数据更新与同步**: 每次向 `media` 目录下新增或删除媒体文件后，都需要在项目根目录下执行 `npm run scan` 重新扫描生成 `public/media/media-data.json` 以同步最新媒体。
 - **图片尺寸建议:** 建议 ComfyUI 生成图片直接使用 JPG 或经过 WebP 压缩，或在前台展示时采用 WebP 格式，单个图片体积控制在 2MB 以下，从而提供最佳的页面首屏加载和瀑布流滚动流畅度。
+
+---
+
+## 6. 视频生成与大模型 API 配置指南
+
+### 6.1 阿里云 DashScope (HappyHorse / 通义万相) API 接入与 CORS / 轮询说明
+1. 访问 [阿里云百炼 / DashScope 控制台](https://dashscope.console.aliyun.com/) 申请开通视频合成 API 服务。
+2. 在控制台中创建并获取 API Key (格式为 `sk-...`)。
+3. 在网页端进入【视频生成】选项卡，点击顶部或模型下拉菜单旁边的 **“接口设置”** 按钮。
+4. 将获取到的 `sk-...` 密钥填入输入框，地址默认使用：
+   `https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis`
+5. **跨域代理与异步轮询:**
+   - **CORS 本地代理:** Vite 开发服务配置了 `/api/v1` 路由代理（指向 `https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com`），解决浏览器直连远程 API 时的预检跨域限制。
+   - **异步任务轮询:** 提交 `POST` 请求开启 `X-DashScope-Async: enable` 后，系统会自动提取 `task_id` 并启动每 3 秒一次的 `GET /api/v1/tasks/{task_id}` 状态轮询，直至状态变为 `SUCCEEDED`（提取最终视频 URL 呈现）或 `FAILED`（记录失败原因）。用户亦可在卡片上手动点击“刷新状态”查询进度。
+6. 设置自动保存于本地浏览器的 `localStorage`，后续直接在线下调度 HappyHorse-1.1 与 通义万相 2.1 高清模型合成视频。
+7. 若未配置 API Key，前端将严格纯本地运行拟真渲染模式；若 API 请求失败或异常，前端将优雅提示并提供重试指引。
+
+### 6.2 自定义视频模型扩展与按模式隔离 (Custom Video Model Expansion & Mode Filtering)
+1. 在网页端进入【视频生成】控制台。
+2. 点击“生成模型”输入框旁的 **“+ 添加模型”** 按钮。
+3. 输入您想接入的新模型名称与标识（例如 `wanx2.1-i2v-plus` 或 `CogVideoX-Fun`），并附带自定义描述标签。新模型会自动绑定当前激活的生成模式（t2v / i2v / r2v / edit）。
+4. 确认添加后，系统会将新模型自动存入本地 `localStorage`，并在模型选择下拉框中按当前选中的生成模式进行精准过滤展示，同时同步更新右侧成果库过滤下拉菜单。
+

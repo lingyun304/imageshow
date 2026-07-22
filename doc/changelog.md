@@ -1,5 +1,79 @@
 # 变更记录
 
+## [1.6.3] - 2026-07-22
+
+### 1. 按生成模式精准过滤视频模型下拉列表与智能切换联动
+* **需求背景**:
+  不同视频生成模式（文生视频 t2v、图生视频 i2v、参考生视频 r2v、视频编辑 edit）在 API 接口规范、模型能力及入参需求上不相同，无法跨模式通用；此前生成控制侧边栏的模型下拉菜单展示了全量模型，需要在不同生成模式下按模式精准隔离过滤，并实现模式切换时的模型自动联动选择。
+* **修改覆盖范围**:
+  1. 修改 `src/App.jsx`：在视频生成控制侧边栏的模型下拉选择框 `<select className="v-model-picker">` 中增加 `.filter(m => !m.mode || m.mode === videoSubTab)` 动态按模式过滤；添加 `useEffect` 状态同步钩子，当生成模式 `videoSubTab` 或模型数组变更时，若当前选中的 `videoModel` 不符合新模式要求，自动智能联动选中新模式下的首个可用模型；更正默认初始选中模型为适用于默认 `t2v` 模式的 `happyhorse-1.1-t2v`。
+  2. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  视频生成控制台模块，模型选择下拉框根据选中的生成模式进行精准隔离匹配展示，切换生成模式时自动智能选中合法模型，避免错选非当前模式模型导致 API 失败，显著提升了参数配置准确度与交互体验。
+
+## [1.6.2] - 2026-07-21
+
+### 1. 解决视频生成 API 跨域 CORS 拦截问题
+* **需求背景**:
+  解决前端在 `http://localhost:5173` 本地开发环境下直接发起 Client-side 异步 POST 请求调用阿里 DashScope 视频生成 API 时被浏览器预检请求 (Preflight) 拦截的问题。
+* **修改范围**:
+  1. 修改 `vite.config.js`：配置 `server.proxy` 开发服务器反向代理，将前端发往 `/api/v1` 的请求代理转发至阿里云端目标域名 `https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com`，并将 `/dashscope-proxy` 代理转发至 `https://dashscope.aliyuncs.com`。
+  2. 修改 `src/App.jsx`：新增 `getProxiedUrl` 工具函数，自动将用户配置的远程 API 端点映射至 Vite 本地开发代理入口。
+* **功能影响范围**:
+  彻底解决了前端直连外部 API 时的 CORS 跨域安全拦截阻断，保障了本地开发环境下视频生成 API 请求的成功发送。
+
+### 2. 实现视频合成异步任务状态轮询与卡片可视化展示
+* **需求背景**:
+  阿里 DashScope 视频合成 API 为异步架构（开启 `X-DashScope-Async: enable`），POST 提交生成请求后只返回 `task_id`，需要前端持续查询 `GET /api/v1/tasks/{task_id}` 获取任务执行进度并在完成后提取 MP4 视频 URL 渲染呈现。
+* **修改范围**:
+  1. 修改 `src/App.jsx`：添加 `getTaskStatusUrl`、`checkSingleTask` 与 `pollTaskStatus` 异步轮询函数；重构 `handleGenerateVideo`，提交成功后向成果库追加 `PENDING` / `RUNNING` 状态卡片并启动每 3 秒一次的定时轮询，并在 `SUCCEEDED` / `FAILED` 时自动切换状态；更新成果卡片 rendering，支持渲染进度条、Task ID 显示及“刷新状态”手动查询操作。
+  2. 修改 `src/App.css`：新增 `.v-task-pending-placeholder`、`.v-task-failed-placeholder`、`.v-pending-text`、`.v-pending-taskid` 以及状态徽章 CSS 样式。
+  3. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  补齐了异步视频生图/生视频任务生命周期的完整闭环，实现了从提交派发、定时轮询、实时渲染进度到成功展示播放视频或友好错误排错的全流程可视化管理。
+
+## [1.6.1] - 2026-07-21
+
+### 1. 优化视频生成表单控件外观与免 Key/异常本地模拟策略
+* **需求背景**:
+  解决视频生成控制面板表单元素在不同主题（如清新雅致 light mode）下呈现灰暗外观的问题；同时优化 API 密钥与报错处理，未填写 Key 时严格全本地模拟不走网络请求，填 Key 但 API 异常时（如 400 模型不存在）自动平滑切入本地模拟流程。
+* **修改范围**:
+  1. 修改 `src/App.css`：为 `.video-header-modes`, `.v-model-select`, `.v-model-picker`, `.v-prompt-textarea`, `.v-upload-dropzone`, `.v-select-pill`, `.v-ratio-btn` 等控件添加全套主题 CSS 变量与 `select option` 背景自适应，全面覆盖 `cyber-dark`、`fresh-mint` 和 `dynamic-anime` 主题。
+  2. 修改 `src/App.jsx`：优化 `handleGenerateVideo` 逻辑，未填写 API Key 时完全不发送 HTTP 网络请求，直接进行多节点本地模拟渲染；填写 API Key 但遇到 DashScope 返回异常（如 400 Model not exist）时进行友好 Warning 提示并自动切入本地流畅模拟流程；将默认 API 请求 Endpoint 更新为阿里云专属地域域名 `https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis`；同步添加 API Key 和 Base URL 的 `localStorage` 变化监听与持久化。
+  3. 同步更新 `doc/deployment.md` 等部署说明文档。
+* **功能影响范围**:
+  提升了视频生成面板在各大主题下的视觉美观度与透亮感，更新了专属 Serverless 地域 Endpoints 提高请求成功率，保障了无 Key 及 API 异常场景下平滑不中断的生成体验。
+
+## [1.6.0] - 2026-07-21
+
+### 1. 新增视觉视频生成界面与阿里 HappyHorse / 万相模型对接控制台
+* **需求背景**:
+  随着阿里 HappyHorse、通义万相 (Wanx) 等前沿视频生成大模型的发布，用户需要一个能在当前玻璃态 (Glassmorphic) 界面下配置模型参数、输入动效 Prompt 并可视化调度生成与下载 MP4 视频成果的控制台。
+* **修改范围**:
+  1. 修改 `src/App.jsx`：新增 `video-generator` 顶部导航与界面视图；包含 HappyHorse-1.1-T2V/I2V、wanx2.1-t2v-turbo/plus、cogvideox-5b 等完整模型列表；支持图生视频、文生视频、参考生视频与视频编辑模式；接入预设 Prompt 灵感芯片、分辨率/画幅药丸选择器、视频时长 slider、随机种子器与阿里云 DashScope API Key 设置面板；开发视频渲染进度条与成果库卡片。
+  2. 修改 `src/App.css`：新增两栏式视频生成控制台样式，兼容 `cyber-dark`、`fresh-mint` 和 `dynamic-anime` 三套全站主题。
+* **功能影响**:
+  扩展了项目在 AI 视频领域的创作能力，实现了在本地静态网页中调优阿里云 HappyHorse 与 Wanx 视频生成大模型，大幅提升了多媒体视效创作体验。
+
+### 2. 同步更新全部配套系统文档
+* **需求背景**:
+  遵循项目规则，保证代码改动与所有配套系统文档（需求文档、部署文档、用户操作文档）的描述完全一致。
+* **修改范围**:
+  1. 更新 `doc/requirements.md`：新增 3.8 视觉视频生成模块 (Video Generator) 需求规格说明。
+  2. 更新 `doc/deployment.md`：新增第 6 节 阿里云 DashScope (HappyHorse / 通义万相) API Key 申请与网页配置指南。
+  3. 更新 `doc/user_guide.md`：新增 4.7 视觉视频生成控制台的操作使用说明。
+* **功能影响**:
+  保证了代码功能与部署、需求、用户文档之间的完全同步与高度一致。
+
+### 3. 优化导航排版与扩展视频编辑与自定义模型支持
+* **需求背景**:
+  解决顶部导航栏因选项过多导致折行换行的问题，支持用户自主添加任意自定义视频模型，为“视频编辑”场景补充专用的原视频文件上传入口，并将默认示例替换为更加安适沉静的低调视效。
+* **修改范围**:
+  1. 修改 `src/App.jsx`：从顶栏移除“部署使用说明”Tab，实现导航按钮单行齐平排列；新增“+ 添加模型”动态弹层与 `localStorage` 持久化，允许用户自定义拓展模型 ID；为“视频编辑”模式添加专用的 MP4/WebM 原视频上传框与控制播放器；更新预设 Prompt 气泡与案例卡片为低调风静物与自然景象。
+  2. 同步更新 `doc/requirements.md`、`doc/deployment.md` 与 `doc/user_guide.md` 说明。
+* **功能影响**:
+  解决了导航换行不雅的问题，增强了视频编辑模式在实际工作流中的可用度与通用扩展性。
+
 ## [1.5.0] - 2026-07-20
 
 ### 1. 调整媒体数据存储架构并迁入 media 目录
