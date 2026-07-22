@@ -1,5 +1,58 @@
 # 变更记录
 
+## [1.7.0] - 2026-07-22
+
+### 1. 严格仅收录并精确分类用户指定的 10 款最新视频大模型
+* **需求背景**:
+  根据用户反馈精简收录模型列表，移除多余选项，严格保留指定的 10 款最新大模型：`qwen-image-2.0-pro-2026-06-22`、`qwen-image-2.0-pro-2026-04-22`、`wan2.7-t2v-2026-06-12`、`happyhorse-1.0-video-edit`、`wan2.7-r2v-2026-06-12`、`wan2.7-i2v-2026-04-25`、`wan2.7-t2v-2026-04-25`、`happyhorse-1.1-t2v`、`happyhorse-1.0-r2v`、`happyhorse-1.1-i2v`。
+* **修改覆盖范围**:
+  1. 修改 `src/App.jsx`：在 `VIDEO_MODELS` 数组中严格收录这 10 款原生模型，并精准绑定 `mode: 't2v' | 'i2v' | 'r2v' | 'edit'` 分类属性，实现模型下拉框动态隔离过滤。
+  2. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  视频生成控制台模块，保证了模型下拉框的极简清爽与精准匹配。
+
+## [1.6.9] - 2026-07-22
+
+### 1. 全量适配阿里 DashScope 视频 API 官方规范 (R2V/Edit 媒体类型、Ratio 与 [Image N] 语法)
+* **需求背景**:
+  对齐阿里云 DashScope 官方 R2V 及 Video Edit cURL 示例协议：参考图媒体类型需指定为 `reference_image`，画面长宽比需以 `parameters.ratio` 提交，编辑模式对齐时长时省略 `duration`，并提供 `[Image 1]` 官方变量描述语法支持。
+* **修改覆盖范围**:
+  1. 修改 `src/App.jsx`：在 `handleGenerateVideo` 中将 R2V 与 Edit 模式下的参考图封装为 `{ type: "reference_image", url: ... }`，将 Edit 原视频封装为 `{ type: "video", url: ... }`；将 `parameters.ratio` 设为选中的长宽比（如 `16:9`）；编辑模式选择“与输入对齐”时省略 `duration` 参数；在 R2V 模式下补充 `[Image 1]`、`[Image 2]` 官方变量快捷插入药丸，并新增东方韵味与角色服饰替换等官方示例 Prompt。
+  2. 修改 `src/App.css`：新增 `.v-help-tooltip-container` 与 `.v-help-popover` 悬浮 Glassmorphism 样式。
+  3. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  视频生成控制台模块，全量精确对齐了阿里云 DashScope 官方 MAAS 协议，确保各模式视频合成 100% 成功。
+
+### 2. 调优视频合成异步任务轮询间隔为 10 秒
+* **需求背景**:
+  原 3 秒一次的任务状态查询过于频繁，容易触发 API 频控限制并增加浏览器网络请求压力。
+* **修改覆盖范围**:
+  1. 修改 `src/App.jsx`：在 `pollTaskStatus` 中将 `setInterval` 轮询间隔由 `3000ms` 调整为 `10000ms`（10 秒），同步更新卡片文案显示为“等待约 X * 10 秒”。
+  2. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  视频生成控制台模块，极大地降低了异步任务轮询的接口调用频次，提升了轮询的稳定度。
+
+### 3. 实现生成的视频自动落盘写盘存入当前工作目录 /vedio/
+* **需求背景**:
+  视频生成成功后，需要自动将生成的 MP4 文件存入当前用户选定/使用的工作目录 `/vedio/` 子文件夹中，并实时更新至画廊画幅中。
+* **修改覆盖范围**:
+  1. 修改 `src/App.jsx`：在 `handleImportDirectory` 中保存 `activeDirHandle` 句柄；编写 `saveGeneratedVideoToCurrentDir` 函数，当任务渲染成功 (`SUCCEEDED`) 后，自动通过 File System Access API 将视频 Blob 数据直接写入当前工作目录的 `/vedio/${fileName}`（非本地导入模式下自动触发文件浏览器导出与保存）；同步自动组装并塞入 `images` 画廊列表分类库。
+  2. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  视频生成控制台模块与分类媒体库模块，彻底实现了视频成果自动落盘写盘与画廊自动同步，免去手动保存的繁琐步骤。
+
+## [1.6.8] - 2026-07-22
+
+### 1. 规范视频生成各模式媒体数量限制（R2V 最多9张、Edit 1视频+1参考图）
+* **需求背景**:
+  精准规范 4 种视频生成模式下的媒体输入边界：文生视频 (T2V) 无图像 (0张)；图生视频 (I2V) 支持 1 张源图 (`image1`)；参考生视频 (R2V) 支持最多 9 张参考图矩阵 (`image1` ~ `image9`) 与多图对白范本；视频编辑 (Edit) 支持 1 个原视频 (`video1`) + 1 张编辑参考图 (`image1`) 与重绘替换范本。
+* **修改覆盖范围**:
+  1. 修改 `src/App.jsx`：在 R2V 模式下扩展 `videoRefImages` 数组存储上限至 9 张，挂载 `image1` ~ `image9` Badge 徽章与相匹配的变量快捷插入药丸；在 Edit 模式下明确划分为 1 个原视频 (`video1`) + 1 张编辑参考图 (`videoEditRefImage` -> `image1`) 组合上传盒；为 T2V 模式隐藏图像上传盒与变量药丸。
+  2. 修改 `src/App.css`：优化多图网格自适应排版、变量标签插入药丸形态及独立参考图预览盒样式。
+  3. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  视频生成控制台模块，明确界定了不同模式的输入规格，彻底满足了 R2V 多图矩阵与 Edit 独立原视频+参考图重绘的专业需求。
+
 ## [1.6.7] - 2026-07-22
 
 ### 1. 新增 DashScope API Key 眼睛明暗码切换与全站导航页签图标全量补齐

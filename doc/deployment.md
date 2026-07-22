@@ -155,4 +155,10 @@ npm run build
 6. **页面容器与控制排版对齐:** 全站顶栏 `.navbar-container` 与主视图 `.main-layout` 最大宽度已统一定制为 `1600px`，确保在大屏显示下内容边缘与顶部导航严格齐平；视频控制侧边栏规范设定为 `420px` 宽度，防止控件挤压变形。
 7. **导航按钮字体与图标规范:** `.nav-action-btn`（“选择本地目录”）显式配置 `font-family: var(--font-heading)` 与 `font-size: 0.95rem`，全站所有 5 个顶部 Tab 均统一装备对应的 Lucide 图标，继承一致的排版属性。
 8. **API Key 明暗码眼睛切换:** 阿里 DashScope API Key 输入框集成了 **👁️ 明暗码切换** 按钮（`Eye` / `EyeOff`），方便配置时进行二次查验与确认。
+9. **模式媒体数量精细限制:** 【文生视频】不展示图像上传框 (0张)；【图生视频】精准支持 1 张源图 (`image1`)；【参考生视频】支持最多 9 张参考图矩阵 (`image1` ~ `image9`)；【视频编辑】支持 1 个原视频 (`video1`) + 1 张编辑参考图 (`image1`)，各模式提示词下方按需提供变量插入药丸与匹配预设。
+10. **编辑时长对齐与声音模式切换:** 视频编辑模式下提供【与输入对齐】按键；新增【声音设置】（智能生成 `auto` / 保持原声 `origin`）控制药丸及悬浮 Help 提示框，样式全面契合系统 3 套 Theme 视觉规范。
+11. **DashScope 官方 API 全量规格对齐:** 将 POST API 请求结构重构为符合阿里百炼 MAAS 官方规范的 `input.media` 数组格式（R2V/Edit 参考图组装为 `reference_image` 类型，Edit 原视频组装为 `video` 类型，I2V 源图为 `first_frame` 类型）；以 `parameters.ratio` 传参画面比例；彻底解决 `Field required: input.media` 报错，并原生支持 `[Image 1]` 语法标签。
+12. **10 秒平缓异步轮询调优:** 视频异步合成任务轮询间隔由原先的 3 秒调整为 **10 秒**（`pollTaskStatus`），极大降低接口请求频次，降低服务器负载。
+13. **自动存入当前目录 /vedio 功能:** 绑定 `saveGeneratedVideoToCurrentDir`，当视频生成成功后自动将 MP4 写入用户使用的本地工作目录 `/vedio` 子文件夹中，并实时联动更新媒体库。
+14. **严格精简收录 10 款指定大模型:** 下拉框严格仅收录指定的 10 款最新模型（`qwen-image-2.0-pro-2026-06-22` / `04-22`、`wan2.7-t2v-2026-06-12` / `04-25`、`happyhorse-1.1-t2v`、`wan2.7-i2v-2026-04-25`、`happyhorse-1.1-i2v`、`wan2.7-r2v-2026-06-12`、`happyhorse-1.0-r2v`、`happyhorse-1.0-video-edit`），按生成模式智能隔离呈现。
 

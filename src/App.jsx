@@ -94,19 +94,48 @@ const AI_LIGHTINGS = [
   { id: 'backlight', name: '逆光轮廓', nameEn: 'Rim Backlighting', prompt: 'strong backlighting, glowing rim light outlining the edges, high silhouette contrast' }
 ];
 
-const VIDEO_PROMPT_EXAMPLES = [
-  { label: '湖光自然', text: '微风轻拂过恬静的极简湖面，岸边浅绿色风铃叶慢速摇曳，画面光影柔和安详，细节细腻流畅。' },
-  { label: '极简光影', text: '深色质感背景中，一缕柔和的淡金微光沿磨砂玻璃边缘极缓推移，展现极简沉稳的气息。' },
-  { label: '镜头慢推', text: '镜头缓慢地向静置在沉木桌面上的陶瓷茶杯推进，细微的水汽微幅升腾，微距细节清晰质朴。' },
-  { label: '风吹麦浪', text: '微风徐徐刮过金黄色的麦田，麦浪呈现轻微平缓的摆动，天空云朵缓慢漂移，气韵安宁。' }
-];
+const VIDEO_PROMPT_EXAMPLES_BY_MODE = {
+  t2v: [
+    { label: '湖光自然', text: '微风轻拂过恬静的极简湖面，岸边浅绿色风铃叶慢速摇曳，画面光影柔和安详，细节细腻流畅。' },
+    { label: '极简光影', text: '深色质感背景中，一缕柔和的淡金微光沿磨砂玻璃边缘极缓推移，展现极简沉稳的气息。' },
+    { label: '镜头慢推', text: '镜头缓慢地向静置在沉木桌面上的陶瓷茶杯推进，细微的水汽微幅升腾，微距细节清晰质朴。' },
+    { label: '风吹麦浪', text: '微风徐徐刮过金黄色的麦田，麦浪呈现轻微平缓的摆动，天空云朵缓慢漂移，气韵安宁。' }
+  ],
+  i2v: [
+    { label: '微表情动态', text: '源图中的人物发丝微动，双眸缓眨，嘴角露出优雅自然的浅笑，镜头微幅拉近。' },
+    { label: '光影流动', text: '图中背景霓虹灯光微泛涟漪，人物衣服光泽随微风轻荡，整体气韵灵动细腻。' },
+    { label: '画面泛舟', text: '图中水面微漾起波纹，小舟沿画幅中央缓慢推移，背景云雾悄然缭绕开来。' }
+  ],
+  r2v: [
+    { label: '东方韵味视角切', text: '[Image 1]中身着红色旗袍的女性，镜头先以侧面中景勾勒旗袍修身剪裁与S型曲线，随即切换至低角度仰拍，捕捉她轻抬玉手展开[Image 2]中的折扇的同时，[Image 3]中的流苏耳坠随头部转动轻盈摆动的细节，最后推近至面部特写，定格在她指尖轻点扇骨、眼波流转间的含蓄风情，多视角全方位展现东方韵味。' },
+    { label: '多图对白', text: 'The princess image2 was imprisoned in bedroom and be threaten by the dragon man image1. They had a long dialogue.' },
+    { label: '多图面部与背景结合', text: '参考 image1 的沉静面部特征与 image2 的璀璨流光背景，展现人物慢动作回头眨眼的细微表情变化。' }
+  ],
+  edit: [
+    { label: '角色服装替换', text: '让视频中的马头人身角色穿上图片中的条纹毛衣' },
+    { label: '飞船替换邮轮', text: '参考image1，将video1中正在行驶的白色邮轮替换为图中所示的太空飞船。飞船必须完全遵循原邮轮的行驶轨迹、速度和朝向，严丝合缝地嵌入场景中。确保飞船表面的光照、反射和阴影与原video1环境的光源保持一致。在替换过程中，周围的背景、水面、天空以及镜头的运镜轨迹必须保持 100% 不变。' },
+    { label: '人物服饰重绘', text: '参考 image1 的唯美画风，将 video1 中的二次元人物服装重绘为银白金属质感战甲，主体动作与背景保留 100% 相同。' }
+  ]
+};
 
 const VIDEO_MODELS = [
-  { id: 'happyhorse-1.1-t2v', name: 'happyhorse-1.1-t2v', tag: '阿里 HappyHorse 文生视频', provider: 'Aliyun DashScope', mode: 't2v' },
-  { id: 'happyhorse-1.1-i2v', name: 'happyhorse-1.1-I2V', tag: '阿里 HappyHorse 图生视频', provider: 'Aliyun DashScope', mode: 'i2v' },
-  { id: 'happyhorse-1.0-r2v', name: 'happyhorse-1.0-r2v', tag: '阿里 HappyHorse 参考生视频', provider: 'Aliyun DashScope', mode: 'r2v' },
-  { id: 'happyhorse-1.1-r2v', name: 'happyhorse-1.1-r2v', tag: '阿里 HappyHorse 参考生视频', provider: 'Aliyun DashScope', mode: 'r2v' },
-  { id: 'happyhorse-1.0-video-edit', name: 'happyhorse-1.0-video-edit', tag: '阿里 HappyHorse 视频编辑', provider: 'Aliyun DashScope', mode: 'edit' }
+  // 文生视频 (T2V) - 5款
+  { id: 'qwen-image-2.0-pro-2026-06-22', name: 'qwen-image-2.0-pro-2026-06-22', tag: '通义千问 Qwen Image 2.0 Pro (2026-06-22)', provider: 'Aliyun DashScope', mode: 't2v' },
+  { id: 'qwen-image-2.0-pro-2026-04-22', name: 'qwen-image-2.0-pro-2026-04-22', tag: '通义千问 Qwen Image 2.0 Pro (2026-04-22)', provider: 'Aliyun DashScope', mode: 't2v' },
+  { id: 'wan2.7-t2v-2026-06-12', name: 'wan2.7-t2v-2026-06-12', tag: '阿里 Wan 2.7 文生视频 (2026-06-12)', provider: 'Aliyun DashScope', mode: 't2v' },
+  { id: 'wan2.7-t2v-2026-04-25', name: 'wan2.7-t2v-2026-04-25', tag: '阿里 Wan 2.7 文生视频 (2026-04-25)', provider: 'Aliyun DashScope', mode: 't2v' },
+  { id: 'happyhorse-1.1-t2v', name: 'happyhorse-1.1-t2v', tag: '阿里 HappyHorse 文生视频 (v1.1)', provider: 'Aliyun DashScope', mode: 't2v' },
+
+  // 图生视频 (I2V) - 2款
+  { id: 'wan2.7-i2v-2026-04-25', name: 'wan2.7-i2v-2026-04-25', tag: '阿里 Wan 2.7 图生视频 (2026-04-25)', provider: 'Aliyun DashScope', mode: 'i2v' },
+  { id: 'happyhorse-1.1-i2v', name: 'happyhorse-1.1-i2v', tag: '阿里 HappyHorse 图生视频 (v1.1)', provider: 'Aliyun DashScope', mode: 'i2v' },
+
+  // 参考生视频 (R2V) - 2款
+  { id: 'wan2.7-r2v-2026-06-12', name: 'wan2.7-r2v-2026-06-12', tag: '阿里 Wan 2.7 参考生视频 (2026-06-12)', provider: 'Aliyun DashScope', mode: 'r2v' },
+  { id: 'happyhorse-1.0-r2v', name: 'happyhorse-1.0-r2v', tag: '阿里 HappyHorse 参考生视频 (v1.0)', provider: 'Aliyun DashScope', mode: 'r2v' },
+
+  // 视频编辑 (Edit) - 1款
+  { id: 'happyhorse-1.0-video-edit', name: 'happyhorse-1.0-video-edit', tag: '阿里 HappyHorse 视频编辑 (v1.0)', provider: 'Aliyun DashScope', mode: 'edit' }
 ];
 
 // Media category translation dictionary for displaying both Chinese and English
@@ -261,9 +290,30 @@ function App() {
   const [videoResolution, setVideoResolution] = useState('720P'); // '720P', '1080P'
   const [videoAspectRatio, setVideoAspectRatio] = useState('16:9'); // '16:9', '9:16', '1:1', '4:3', '3:4'
   const [videoDuration, setVideoDuration] = useState(5); // 3 to 15
+  const [videoDurationMode, setVideoDurationMode] = useState('align'); // 'align' or 'custom'
+  const [videoAudioSetting, setVideoAudioSetting] = useState('auto'); // 'auto' or 'origin'
   const [videoSeed, setVideoSeed] = useState(935123587);
   const [videoImagePreview, setVideoImagePreview] = useState(null);
   const [videoFilePreview, setVideoFilePreview] = useState(null);
+  const [videoEditRefImage, setVideoEditRefImage] = useState(null);
+  const [videoRefImages, setVideoRefImages] = useState([]);
+  const [activeDirHandle, setActiveDirHandle] = useState(null);
+
+  useEffect(() => {
+    if (videoSubTab === 'r2v') {
+      if (!videoPrompt || videoPrompt.includes('微风轻拂') || videoPrompt.includes('替换为图中')) {
+        setVideoPrompt('The princess image2 was imprisoned in bedroom and be threaten by the dragon man image1. They had a long dialogue.');
+      }
+    } else if (videoSubTab === 'edit') {
+      if (!videoPrompt || videoPrompt.includes('微风轻拂') || videoPrompt.includes('The princess')) {
+        setVideoPrompt('参考image1，将video1中正在行驶的白色邮轮替换为图中所示的太空飞船。飞船必须完全遵循原邮轮的行驶轨迹、速度和朝向，严丝合缝地嵌入场景中。确保飞船表面的光照、反射和阴影与原video1环境的光源保持一致。在替换过程中，周围的背景、水面、天空以及镜头的运镜轨迹必须保持 100% 不变。');
+      }
+    } else if (videoSubTab === 't2v') {
+      if (!videoPrompt || videoPrompt.includes('The princess') || videoPrompt.includes('替换为图中')) {
+        setVideoPrompt('微风轻拂过恬静的极简湖面，岸边浅绿色风铃叶慢速摇曳，画面光影柔和安详，细节细腻流畅。');
+      }
+    }
+  }, [videoSubTab]);
   const [dashscopeApiKey, setDashscopeApiKey] = useState(() => localStorage.getItem('dashscopeApiKey') || '');
   const [showDashscopeKey, setShowDashscopeKey] = useState(false);
   const [videoApiUrl, setVideoApiUrl] = useState(() => localStorage.getItem('videoApiUrl') || 'https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis');
@@ -310,15 +360,49 @@ function App() {
   }, [videoApiUrl]);
 
   const handleVideoImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    if (videoSubTab === 'i2v') {
+      const file = files[0];
       const reader = new FileReader();
       reader.onload = (event) => {
         setVideoImagePreview(event.target.result);
-        showToast('源图解析上传成功！', 'success');
+        showToast('源图上传成功！(image1)', 'success');
       };
       reader.readAsDataURL(file);
+    } else if (videoSubTab === 'edit') {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setVideoEditRefImage(event.target.result);
+        showToast('编辑参考图上传成功！(image1)', 'success');
+      };
+      reader.readAsDataURL(file);
+    } else if (videoSubTab === 'r2v') {
+      let loadedCount = 0;
+      const newPreviews = [];
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          newPreviews.push(event.target.result);
+          loadedCount++;
+          if (loadedCount === files.length) {
+            setVideoRefImages((prev) => {
+              const combined = [...prev, ...newPreviews].slice(0, 9);
+              showToast(`成功添加参考图！当前已整合 ${combined.length}/9 张参考图`, 'success');
+              return combined;
+            });
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  const handleRemoveRefImage = (index) => {
+    setVideoRefImages((prev) => prev.filter((_, i) => i !== index));
+    showToast(`已移除参考图 image${index + 1}`, 'info');
   };
 
   const handleVideoFileUpload = (e) => {
@@ -395,6 +479,64 @@ function App() {
     }));
   };
 
+  const saveGeneratedVideoToCurrentDir = async (mediaUrl, taskId) => {
+    const fileName = `video_${taskId ? taskId.substring(0, 8) : Date.now()}_${Math.floor(Math.random() * 1000)}.mp4`;
+    let savedPath = mediaUrl || `/media/vedio/${fileName}`;
+
+    try {
+      if (activeDirHandle) {
+        // User imported a directory via File System Access API
+        let targetVedioDirHandle;
+        try {
+          const mediaDirHandle = await activeDirHandle.getDirectoryHandle('media', { create: true });
+          targetVedioDirHandle = await mediaDirHandle.getDirectoryHandle('vedio', { create: true });
+        } catch (e) {
+          targetVedioDirHandle = await activeDirHandle.getDirectoryHandle('vedio', { create: true });
+        }
+
+        const resp = await fetch(mediaUrl);
+        const blob = await resp.blob();
+        const fileHandle = await targetVedioDirHandle.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+
+        const savedFile = await fileHandle.getFile();
+        savedPath = URL.createObjectURL(savedFile);
+        showToast(`🎉 视频已成功自动保存至当前使用目录的 /vedio/${fileName} 中！`, 'success');
+      } else {
+        // Default mode: auto trigger download / export to /vedio directory
+        savedPath = `/media/vedio/${fileName}`;
+        const link = document.createElement('a');
+        link.href = mediaUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast(`🎉 已自动保存/导出视频至当前 /vedio 目录 (文件: ${fileName})`, 'success');
+      }
+
+      // Automatically sync new video to gallery under category 'vedio'
+      const newMediaItem = {
+        id: `gen-vedio-${Date.now()}`,
+        name: fileName,
+        category: 'vedio',
+        categoryChinese: '短视频',
+        path: savedPath,
+        type: 'video',
+        tags: ['AI生成视频', '视频合成'],
+        size: '1080P/720P',
+        updatedAt: new Date().toLocaleDateString('zh-CN')
+      };
+      setImages(prev => [newMediaItem, ...prev]);
+    } catch (err) {
+      console.error('Failed to auto save video to /vedio:', err);
+      showToast(`自动保存视频至 /vedio 失败: ${err.message}`, 'warning');
+    }
+
+    return savedPath;
+  };
+
   const checkSingleTask = async (cardId, taskId, apiKey, rawApiUrl) => {
     if (!taskId || taskId.startsWith('task-')) {
       showToast('无法刷新未绑定真实 Task ID 的本地模拟记录', 'info');
@@ -426,13 +568,17 @@ function App() {
       const status = taskOutput.task_status;
 
       if (status === 'SUCCEEDED') {
-        const mediaUrl = taskOutput.video_url || taskOutput.results?.[0]?.url || taskOutput.result_url || taskOutput.render_urls?.[0];
+        const mediaUrl = taskOutput.video_url || taskOutput.results?.[0]?.url || taskOutput.result_url || taskOutput.render_urls?.[0] || '/media/vedio/wan_2_2_14B_t2v.mp4';
+        
+        // Auto save video file to current working directory /vedio
+        const localSavedPath = await saveGeneratedVideoToCurrentDir(mediaUrl, taskId);
+
         updateVideoCard(cardId, {
           status: 'SUCCEEDED',
-          path: mediaUrl || '/media/vedio/wan_2_2_14B_t2v.mp4',
+          path: localSavedPath || mediaUrl,
           completedAt: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
         });
-        showToast(`任务 [${taskId.substring(0, 8)}] 渲染成功！`, 'success');
+        showToast(`任务 [${taskId.substring(0, 8)}] 渲染成功并已保存至 /vedio！`, 'success');
         return true;
       } else if (status === 'FAILED' || status === 'CANCELED') {
         const errReason = taskOutput.message || taskOutput.code || '渲染出现问题';
@@ -458,7 +604,7 @@ function App() {
 
   const pollTaskStatus = (cardId, taskId, apiKey, rawApiUrl) => {
     let attempts = 0;
-    const maxAttempts = 120; // 6 mins max
+    const maxAttempts = 60; // 10 mins max (60 attempts * 10s)
 
     const timer = setInterval(async () => {
       attempts++;
@@ -474,10 +620,10 @@ function App() {
       } else {
         updateVideoCard(cardId, {
           pollCount: attempts,
-          progressText: `模型渲染中... 已轮询 ${attempts} 次 (等待约 ${attempts * 3} 秒)`
+          progressText: `模型渲染中... 已轮询 ${attempts} 次 (等待约 ${attempts * 10} 秒)`
         });
       }
-    }, 3000);
+    }, 10000);
   };
 
   const handleGenerateVideo = async () => {
@@ -500,6 +646,55 @@ function App() {
 
     try {
       const proxiedSubmitUrl = getProxiedUrl(videoApiUrl);
+
+      // Build media items according to DashScope API spec
+      let mediaList = [];
+      if (videoSubTab === 'i2v') {
+        if (videoImagePreview) {
+          mediaList.push({
+            type: 'first_frame',
+            url: videoImagePreview
+          });
+        }
+      } else if (videoSubTab === 'r2v') {
+        videoRefImages.forEach((imgUrl) => {
+          mediaList.push({
+            type: 'reference_image',
+            url: imgUrl
+          });
+        });
+      } else if (videoSubTab === 'edit') {
+        if (videoFilePreview) {
+          mediaList.push({
+            type: 'video',
+            url: videoFilePreview
+          });
+        }
+        if (videoEditRefImage) {
+          mediaList.push({
+            type: 'reference_image',
+            url: videoEditRefImage
+          });
+        }
+      }
+
+      const requestBody = {
+        model: videoModel,
+        input: {
+          prompt: videoPrompt,
+          ...(mediaList.length > 0 ? { media: mediaList } : {})
+        },
+        parameters: {
+          resolution: videoResolution, // '720P', '1080P'
+          ...(videoAspectRatio ? { ratio: videoAspectRatio } : {}),
+          ...(videoSubTab === 'edit' && videoDurationMode === 'align'
+            ? {}
+            : { duration: videoDuration }),
+          ...(videoAudioSetting ? { audio: videoAudioSetting } : {}),
+          ...(videoSeed ? { seed: videoSeed } : {})
+        }
+      };
+
       const resp = await fetch(proxiedSubmitUrl, {
         method: 'POST',
         headers: {
@@ -507,18 +702,7 @@ function App() {
           'Content-Type': 'application/json',
           'X-DashScope-Async': 'enable'
         },
-        body: JSON.stringify({
-          model: videoModel,
-          input: {
-            prompt: videoPrompt,
-            ...(videoImagePreview ? { img_url: videoImagePreview } : {})
-          },
-          parameters: {
-            size: videoAspectRatio === '16:9' ? '1280*720' : videoAspectRatio === '9:16' ? '720*1280' : '1024*1024',
-            duration: videoDuration,
-            seed: videoSeed
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!resp.ok) {
@@ -1766,6 +1950,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
       }
 
       const dirHandle = await window.showDirectoryPicker();
+      setActiveDirHandle(dirHandle);
       setImporting(true);
       setImportStatus('正在检查数据库...');
 
@@ -3382,40 +3567,96 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                 )}
 
                 {/* Video Upload Box if Video Editing */}
+                {/* Media Upload Section */}
                 {videoSubTab === 'edit' ? (
+                  <>
+                    <div className="video-form-group">
+                      <label className="v-form-label">
+                        <span>上传原视频 (video1)</span>
+                        <span className="v-required">* 必须</span>
+                      </label>
+                      <div className="v-image-upload-box">
+                        {videoFilePreview ? (
+                          <div className="v-uploaded-preview">
+                            <video src={videoFilePreview} controls style={{ width: '100%', maxHeight: '160px', objectFit: 'contain', background: '#000' }} />
+                            <span className="v-ref-badge" style={{ bottom: '8px', left: '8px' }}>video1</span>
+                            <button className="remove-img-btn" onClick={() => setVideoFilePreview(null)} title="移除视频">
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="v-upload-dropzone">
+                            <Film size={26} className="upload-icon" />
+                            <span>点击或拖拽原视频 (video1) 至此处上传</span>
+                            <span className="upload-subtext">支持 MP4, WebM, MOV 格式 (建议 1080P/720P)</span>
+                            <input type="file" accept="video/*" onChange={handleVideoFileUpload} style={{ display: 'none' }} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="video-form-group mt-2">
+                      <label className="v-form-label">
+                        <span>上传编辑参考图 (image1)</span>
+                        <span className="upload-subtext" style={{ fontWeight: 'normal' }}>1张参考图</span>
+                      </label>
+                      <div className="v-image-upload-box">
+                        {videoEditRefImage ? (
+                          <div className="v-uploaded-preview">
+                            <img src={videoEditRefImage} alt="Edit Reference" />
+                            <span className="v-ref-badge" style={{ bottom: '8px', left: '8px' }}>image1</span>
+                            <button className="remove-img-btn" onClick={() => setVideoEditRefImage(null)} title="移除参考图">
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="v-upload-dropzone" style={{ padding: '1rem' }}>
+                            <Upload size={22} className="upload-icon" />
+                            <span>点击或拖拽上传编辑参考图 (image1)</span>
+                            <span className="upload-subtext">支持 JPG, PNG, WEBP</span>
+                            <input type="file" accept="image/*" onChange={handleVideoImageUpload} style={{ display: 'none' }} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : videoSubTab === 'r2v' ? (
                   <div className="video-form-group">
                     <label className="v-form-label">
-                      <span>上传需要编辑的原视频 (Video)</span>
-                      <span className="v-required">*</span>
+                      <span>上传参考图片矩阵 (image1 ~ image9)</span>
+                      <span className="v-required">* 最多9张</span>
                     </label>
-                    <div className="v-image-upload-box">
-                      {videoFilePreview ? (
-                        <div className="v-uploaded-preview">
-                          <video src={videoFilePreview} controls style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', background: '#000' }} />
-                          <button className="remove-img-btn" onClick={() => setVideoFilePreview(null)} title="移除视频">
-                            <X size={14} />
+                    <div className="v-multi-ref-grid">
+                      {videoRefImages.map((imgUrl, idx) => (
+                        <div key={idx} className="v-ref-thumb-card">
+                          <img src={imgUrl} alt={`ref-image${idx + 1}`} />
+                          <span className="v-ref-badge">image{idx + 1}</span>
+                          <button className="remove-img-btn" onClick={() => handleRemoveRefImage(idx)} title={`移除 image${idx + 1}`}>
+                            <X size={12} />
                           </button>
                         </div>
-                      ) : (
-                        <label className="v-upload-dropzone">
-                          <Film size={28} className="upload-icon" />
-                          <span>点击或拖拽原视频文件至此处上传</span>
-                          <span className="upload-subtext">支持 MP4, WebM, MOV 格式 (建议 1080P/720P)</span>
-                          <input type="file" accept="video/*" onChange={handleVideoFileUpload} style={{ display: 'none' }} />
+                      ))}
+                      {videoRefImages.length < 9 && (
+                        <label className="v-ref-add-dropzone" style={{ minHeight: videoRefImages.length === 0 ? '90px' : 'auto' }} title="点击上传参考图片 (支持一次选择多张，最多9张)">
+                          <Upload size={20} className="upload-icon" style={{ marginBottom: '2px' }} />
+                          <span>{videoRefImages.length === 0 ? '点击或拖拽参考图 (支持多选，最多9张)' : `+ 参考图 (image${videoRefImages.length + 1})`}</span>
+                          <span className="upload-subtext">已上传 {videoRefImages.length}/9 张</span>
+                          <input type="file" accept="image/*" multiple onChange={handleVideoImageUpload} style={{ display: 'none' }} />
                         </label>
                       )}
                     </div>
                   </div>
-                ) : (videoSubTab === 'i2v' || videoSubTab === 'r2v') && (
+                ) : videoSubTab === 'i2v' && (
                   <div className="video-form-group">
                     <label className="v-form-label">
-                      <span>上传源图 / 参考图</span>
-                      <span className="v-required">*</span>
+                      <span>上传源图 (image1)</span>
+                      <span className="v-required">* 1张</span>
                     </label>
                     <div className="v-image-upload-box">
                       {videoImagePreview ? (
                         <div className="v-uploaded-preview">
                           <img src={videoImagePreview} alt="Uploaded source" />
+                          <span className="v-ref-badge" style={{ bottom: '8px', left: '8px' }}>image1</span>
                           <button className="remove-img-btn" onClick={() => setVideoImagePreview(null)} title="移除图片">
                             <X size={14} />
                           </button>
@@ -3423,7 +3664,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       ) : (
                         <label className="v-upload-dropzone">
                           <Upload size={24} className="upload-icon" />
-                          <span>点击或将图片拖拽至此处上传</span>
+                          <span>点击或将源图 (image1) 拖拽至此处上传</span>
                           <span className="upload-subtext">支持 JPG, PNG, WEBP (建议比例 16:9 或 1:1)</span>
                           <input type="file" accept="image/*" onChange={handleVideoImageUpload} style={{ display: 'none' }} />
                         </label>
@@ -3443,14 +3684,83 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     rows={4}
                     value={videoPrompt}
                     onChange={(e) => setVideoPrompt(e.target.value)}
-                    placeholder="请输入对视频画面的详细动效描述，例如：镜头向前移动，展示动作与微表情变化..."
+                    placeholder={
+                      videoSubTab === 'edit'
+                        ? '例如：参考image1，将video1中正在行驶的白色邮轮替换为图中所示的太空飞船...'
+                        : videoSubTab === 'r2v'
+                        ? '例如：The princess image2 was imprisoned in bedroom and be threaten by the dragon man image1...'
+                        : '请输入对视频画面的详细动效描述...'
+                    }
                   />
 
-                  {/* Sample Prompt Chips */}
+                  {/* Variable Tag Quick Insertion Bar */}
+                  {videoSubTab !== 't2v' && (
+                    <div className="v-insert-tags-row">
+                      <span className="example-label" style={{ marginRight: '2px' }}>插入变量标签:</span>
+                      {videoSubTab === 'edit' && (
+                        <>
+                          <button
+                            type="button"
+                            className="v-insert-tag-pill"
+                            onClick={() => setVideoPrompt(prev => prev + ' video1')}
+                            title="插入原视频引用名称 video1"
+                          >
+                            + video1
+                          </button>
+                          <button
+                            type="button"
+                            className="v-insert-tag-pill"
+                            onClick={() => setVideoPrompt(prev => prev + ' image1')}
+                            title="插入参考图引用名称 image1"
+                          >
+                            + image1
+                          </button>
+                        </>
+                      )}
+                      {videoSubTab === 'i2v' && (
+                        <button
+                          type="button"
+                          className="v-insert-tag-pill"
+                          onClick={() => setVideoPrompt(prev => prev + ' image1')}
+                          title="插入源图引用名称 image1"
+                        >
+                          + image1
+                        </button>
+                      )}
+                      {videoSubTab === 'r2v' && (
+                        Array.from({ length: Math.min(Math.max(videoRefImages.length + 1, 3), 9) }).map((_, idx) => {
+                          const tagBracket = `[Image ${idx + 1}]`;
+                          const tagLower = `image${idx + 1}`;
+                          return (
+                            <React.Fragment key={idx}>
+                              <button
+                                type="button"
+                                className="v-insert-tag-pill"
+                                onClick={() => setVideoPrompt(prev => prev + ` ${tagBracket}`)}
+                                title={`插入参考图引用名称 ${tagBracket}`}
+                              >
+                                + {tagBracket}
+                              </button>
+                              <button
+                                type="button"
+                                className="v-insert-tag-pill"
+                                onClick={() => setVideoPrompt(prev => prev + ` ${tagLower}`)}
+                                title={`插入参考图引用名称 ${tagLower}`}
+                              >
+                                + {tagLower}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sample Prompt Chips based on current Mode */}
                   <div className="v-example-prompts">
-                    <span className="example-label">示例 Prompt</span>
+                    <span className="example-label">示例 Prompt 预设</span>
                     <div className="example-chips-flow">
-                      {VIDEO_PROMPT_EXAMPLES.map((item, idx) => (
+                      {(VIDEO_PROMPT_EXAMPLES_BY_MODE[videoSubTab] || VIDEO_PROMPT_EXAMPLES_BY_MODE.t2v).map((item, idx) => (
                         <button
                           key={idx}
                           className="v-example-chip"
@@ -3463,10 +3773,11 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       <button
                         className="v-example-chip refresh-chip"
                         onClick={() => {
-                          const randomEx = VIDEO_PROMPT_EXAMPLES[Math.floor(Math.random() * VIDEO_PROMPT_EXAMPLES.length)];
+                          const list = VIDEO_PROMPT_EXAMPLES_BY_MODE[videoSubTab] || VIDEO_PROMPT_EXAMPLES_BY_MODE.t2v;
+                          const randomEx = list[Math.floor(Math.random() * list.length)];
                           setVideoPrompt(randomEx.text);
                         }}
-                        title="随机切换示例"
+                        title="随机切换当前模式下的示例"
                       >
                         <RefreshCw size={12} />
                       </button>
@@ -3509,26 +3820,100 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   </div>
                 </div>
 
-                {/* Duration slider */}
+                {/* Duration options */}
                 <div className="video-form-group">
                   <div className="v-slider-header">
-                    <label className="v-form-label mb-0">视频时长(秒)</label>
-                    <span className="v-slider-value">{videoDuration}</span>
+                    <label className="v-form-label mb-0">
+                      <span>视频时长(秒)</span>
+                      <div className="v-help-tooltip-container">
+                        <HelpCircle size={13} className="help-icon" />
+                        <div className="v-help-popover">
+                          <div className="v-help-popover-item">
+                            <strong>与输入对齐</strong>：在视频编辑模式下，输出视频的时长与上传的原视频 (video1) 保持 100% 对齐。
+                          </div>
+                          <div className="v-help-popover-item">
+                            <strong>自定义时长</strong>：手动滑动指定 3 ~ 15 秒生成长度。
+                          </div>
+                        </div>
+                      </div>
+                    </label>
+                    <span className="v-slider-value">
+                      {videoSubTab === 'edit' && videoDurationMode === 'align' ? '与输入对齐' : `${videoDuration}s`}
+                    </span>
                   </div>
-                  <div className="v-slider-wrapper">
-                    <input
-                      type="range"
-                      min={3}
-                      max={15}
-                      step={1}
-                      value={videoDuration}
-                      onChange={(e) => setVideoDuration(Number(e.target.value))}
-                      className="v-range-slider"
-                    />
-                    <div className="v-slider-marks">
-                      <span>3</span>
-                      <span>15</span>
+
+                  {videoSubTab === 'edit' && (
+                    <div className="v-pills-row mb-2">
+                      <button
+                        type="button"
+                        className={`v-select-pill ${videoDurationMode === 'align' ? 'active' : ''}`}
+                        onClick={() => setVideoDurationMode('align')}
+                      >
+                        与输入对齐
+                      </button>
+                      <button
+                        type="button"
+                        className={`v-select-pill ${videoDurationMode === 'custom' ? 'active' : ''}`}
+                        onClick={() => setVideoDurationMode('custom')}
+                      >
+                        自定义时长 ({videoDuration}s)
+                      </button>
                     </div>
+                  )}
+
+                  {(videoSubTab !== 'edit' || videoDurationMode === 'custom') && (
+                    <div className="v-slider-wrapper">
+                      <input
+                        type="range"
+                        min={3}
+                        max={15}
+                        step={1}
+                        value={videoDuration}
+                        onChange={(e) => {
+                          setVideoDuration(Number(e.target.value));
+                          if (videoSubTab === 'edit') setVideoDurationMode('custom');
+                        }}
+                        className="v-range-slider"
+                      />
+                      <div className="v-slider-marks">
+                        <span>3s</span>
+                        <span>15s</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Audio Settings */}
+                <div className="video-form-group">
+                  <label className="v-form-label">
+                    <span>声音设置</span>
+                    <div className="v-help-tooltip-container">
+                      <HelpCircle size={13} className="help-icon" />
+                      <div className="v-help-popover">
+                        <div className="v-help-popover-item">
+                          <strong>auto (默认)</strong>：模型根据 prompt 内容智能判断。若提示词涉及声音描述，可能重新生成音频；否则可能保留输入素材的原声。
+                        </div>
+                        <div className="v-help-popover-item">
+                          <strong>origin</strong>：强制保留输入视频的原声，不重新生成。
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                  <div className="v-pills-row">
+                    <button
+                      type="button"
+                      className={`v-select-pill ${videoAudioSetting === 'auto' ? 'active' : ''}`}
+                      onClick={() => setVideoAudioSetting('auto')}
+                    >
+                      智能生成
+                    </button>
+                    <button
+                      type="button"
+                      className={`v-select-pill ${videoAudioSetting === 'origin' ? 'active' : ''}`}
+                      onClick={() => setVideoAudioSetting('origin')}
+                    >
+                      保持原声
+                    </button>
                   </div>
                 </div>
 

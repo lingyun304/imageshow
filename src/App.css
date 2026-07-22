@@ -3166,6 +3166,54 @@ html.dynamic-anime .ai-generate-submit-btn:hover:not(:disabled) {
   text-decoration: underline;
 }
 
+/* Tooltip Popover for Help Icon */
+.v-help-tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+
+.v-help-tooltip-container .v-help-popover {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 125%;
+  right: -10px;
+  width: 260px;
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: normal;
+  line-height: 1.45;
+  z-index: 100;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  text-align: left;
+}
+
+.v-help-tooltip-container:hover .v-help-popover {
+  visibility: visible;
+  opacity: 1;
+}
+
+.v-help-popover-item {
+  margin-bottom: 0.4rem;
+}
+
+.v-help-popover-item:last-child {
+  margin-bottom: 0;
+}
+
+.v-help-popover-item strong {
+  color: var(--primary);
+}
+
 .v-model-picker {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -3311,6 +3359,96 @@ html.dynamic-anime .ai-generate-submit-btn:hover:not(:disabled) {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  z-index: 5;
+}
+
+/* Multi-reference images grid */
+.v-multi-ref-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.v-ref-thumb-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.v-ref-thumb-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.v-ref-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: rgba(139, 92, 246, 0.85);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.v-ref-add-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  min-height: 60px;
+  border: 1.5px dashed var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.725rem;
+  transition: var(--transition-fast);
+  text-align: center;
+  padding: 0.4rem;
+}
+
+.v-ref-add-dropzone:hover {
+  border-color: var(--primary);
+  background: rgba(139, 92, 246, 0.08);
+  color: var(--text-primary);
+}
+
+/* Variable tag insertion pills */
+.v-insert-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.v-insert-tag-pill {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--primary-hover);
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.725rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.v-insert-tag-pill:hover {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 8px var(--primary-glow);
 }
 
 /* Select Pills & Ratio Grid */

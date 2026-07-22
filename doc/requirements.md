@@ -109,23 +109,25 @@
   - 阿里 HappyHorse 1.1 专有视觉模型 (HappyHorse-1.1-T2V / HappyHorse-1.1-I2V / HappyHorse-1.0-R2V / HappyHorse-1.0-Video-Edit)。
   - 通义万相 2.1 高清/极速与 2.0 序列模型 (wanx2.1-t2v-turbo, wanx2.1-t2v-plus, wanx2.1-i2v-turbo, wanx2.0-t2v)。
   - 智谱 CogVideoX 5B (cogvideox-5b) 及 腾讯 Hunyuan 视频模型 (hunyuan-video)。
-  - **模式精准隔离展示:** 由于不同生成模式（文生视频 t2v、图生视频 i2v、参考生视频 r2v、视频编辑 edit）在模型底层能力与 API 参数规范上存在差异，生成控制侧边栏的模型下拉选择框根据当前选中的生成模式子标签执行动态精准过滤，且切换生成模式时自动智能联动选中该模式下的首个可用模型。
+  - **原生大模型精简收录 (10款指定模型):** 系统原生内置并严格收录用户指定的 10 款最新大模型（T2V: `qwen-image-2.0-pro-2026-06-22`、`qwen-image-2.0-pro-2026-04-22`、`wan2.7-t2v-2026-06-12`、`wan2.7-t2v-2026-04-25`、`happyhorse-1.1-t2v`；I2V: `wan2.7-i2v-2026-04-25`、`happyhorse-1.1-i2v`；R2V: `wan2.7-r2v-2026-06-12`、`happyhorse-1.0-r2v`；Edit: `happyhorse-1.0-video-edit`），并在模型下拉框按模式隔离过滤。
   - **自定义模型拓展与删除管理:** 支持用户通过“+ 管理模型”按需创建任意新模型 ID 与标签，绑定当前选择的生成模式并使用 `localStorage` 持久化，自动同步至主选框与画廊筛选菜单；同时支持在模型选择器旁及管理弹窗内一键删除个人自定义模型，系统原生内置模型保持受保护状态。
   - **宽屏容器对齐与操作区拓展 (Layout Alignment & Workspace Expansion):** 统一页面容器与顶部导航栏的最大宽度规格至 `1600px`，实现全站顶级顶栏与内容面板两侧精准齐平；将视频生成控制面板宽度拓展至 `420px`，为模型管理与参数配置提供充裕的操作排版空间。
   - **顶部导航按钮字体属性与图标全量对齐 (Navbar Typography & Icon Consistency):** 规范顶部“选择本地目录 / 载入默认库”操作按钮（`.nav-action-btn`）的 CSS 规则，使其 `font-family`（`Outfit`）、`font-size`（`0.95rem`）及 `font-weight`（`500`）与导航 Tab 选项 100% 保持一致；同时为所有顶部导航页签（首页、分类媒体库、提示词生成器、AI 提示词大师、视频生成）统一配备视觉对应的 Lucide 小图标，保持美观和谐的基调。
-- **全模式生成支持 (Generation Modes):**
-  - **文生视频 (T2V):** 纯文本 Prompt 驱动场景运动与画质变化。
-  - **图生视频 (I2V):** 基于拖拽上传的源图输入进行动态动画预测。
-  - **参考生视频 (R2V):** 支持精细低调的参考帧引导与微距细节还原。
-  - **视频编辑 (Edit):** 内置专用的视频上传 Dropzone 区域，支持上传 MP4 / WebM / MOV 待编辑原视频进行重新渲染与重绘。
-- **高自由度动效参数调优 (Flexible Controls):**
-  - **灵感芯片与快捷气泡:** 预设湖光自然、极简光影、镜头慢推、风吹麦浪等安适沉静的低调视效范本，支持 🔄 实时随机刷新。
+- **全模式生成支持与精确媒体数量控制 (Generation Modes & Input Boundaries):**
+  - **文生视频 (T2V):** 纯文本 Prompt 驱动场景运动，无需且不展示图像上传框 (0 张图像)。
+  - **图生视频 (I2V):** 支持上传 1 张源图 (`image1`) 进行动态预测。
+  - **参考生视频 (R2V):** 支持 1~9 张多图参考矩阵 (`image1` ~ `image9`) 上传与管理；预设多图对白模版 (如 `The princess image2 was imprisoned in bedroom and be threaten by the dragon man image1. They had a long dialogue.`)。
+  - **视频编辑 (Edit):** 支持同时上传 1 个待编辑原视频 (`video1`) 与 1 张编辑参考图 (`image1`)；预设视频重绘与对象替换模版 (如 `参考image1，将video1中正在行驶的白色邮轮替换为图中所示的太空飞船...`)。
+- **高自由度动效参数调优与快捷变量标签 (Flexible Controls & Variable Insertion):**
+  - **按模式按需变量标签插入:** 提示词框下方根据模式精准提供 `+ video1`、`+ image1` ... `+ image9` 变量快捷插入按键。
+  - **按模式智能切换 Prompt 预设:** 根据选中的生成模式（t2v / i2v / r2v / edit）提供专属的示例 Prompt 预设与 🔄 随机换一批功能。
   - **分辨率与画面比例:** 支持 720P / 1080P 清晰度，以及 16:9、9:16、1:1、4:3、3:4 等 5 种主流画面长宽比。
-  - **时长与种子控制:** 3 ~ 15 秒精准 slider 调节，搭配可复现同源视频序列的随机 Seed 输入框与 🎲 随机摇号按钮。
+  - **视频编辑时长与声音模式配置 (Edit Duration Alignment & Audio Settings):** 视频编辑模式下提供“与输入对齐”选项按键（自动与原视频 `video1` 播放长度 100% 同步）与 3~15 秒自定义 slider 调节；提供**声音设置**（智能生成 `auto` / 保持原声 `origin`）两项控制按键，配合带悬浮 Popover 的帮助提示图标。
 - **云端 DashScope API 接入、跨域代理与异步任务轮询 (API, CORS Proxy & Async Task Polling):**
+  - **符合官方规范的 Media 数组与 Ratio 参数 Payload 请求:** 严格遵照阿里 DashScope 官方协议解析媒体项（R2V/Edit 的参考图组装为 `{ type: "reference_image", url: ... }`，原视频组装为 `{ type: "video", url: ... }`，I2V 源图组装为 `{ type: "first_frame", url: ... }`）；画面长宽比统一以 `parameters.ratio`（如 `16:9`）下发；编辑模式下对齐时长时省略 `duration` 字段；R2V 预设与变量药丸全面适配 `[Image 1]`、`[Image 2]` 方括号官方语法。
   - **CORS 跨域代理:** 在 Vite 配置中搭建 `/api/v1` 与 `/dashscope-proxy` 本地代理层（指向阿里 MAAS / DashScope 域名），彻底消除浏览器直连 API 产生的预检 CORS 阻塞问题。
-  - **异步任务轮询机制:** 在调用 `POST` 合成视频服务获取 `task_id` 后，系统自动发起周期为 3 秒的异步轮询请求（对 `GET /api/v1/tasks/{task_id}` 执行代理获取），实时同步任务状态（`PENDING` -> `RUNNING` -> `SUCCEEDED` / `FAILED`）。
-  - **优雅降级与卡片管理:** 卡片具备任务状态实时渲染（加载动画、进度文本与 Task ID 展示）、手动刷新/重试机制、以及异常状态友好捕获，在 API Key 未填时平滑支持本地调试模式。
+  - **异步任务轮询机制:** 在调用 `POST` 合成视频服务获取 `task_id` 后，系统自动发起周期为 10 秒的平缓异步轮询请求（对 `GET /api/v1/tasks/{task_id}` 执行代理获取），实时同步任务状态（`PENDING` -> `RUNNING` -> `SUCCEEDED` / `FAILED`），避免请求过于频繁。
+  - **成果视频自动落盘存入当前工作目录 `/vedio`:** 视频渲染成功后（`status === "SUCCEEDED"`），系统自动通过 File System Access API 句柄或本地文件导出机制，将 `.mp4` 文件自动写入当前活动工作目录的 `/vedio/`（或 `/media/vedio/`）子目录下，并同步更新媒体画廊（`images`）分类库。
 - **成果库卡片与交互 (Showcase & Management):**
   - 卡片集成 HTML5 原生播放器、模型徽章（HappyHorse / Wanx / 自定义模型等）、属性标签、异步任务状态标签、Prompt 一键复制与 MP4 视频本地保存。
 
