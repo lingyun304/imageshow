@@ -3113,8 +3113,9 @@ html.dynamic-anime .ai-generate-submit-btn:hover:not(:disabled) {
 /* Two column workspace */
 .video-workspace-layout {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 420px 1fr;
   gap: 1.5rem;
+  width: 100%;
 }
 
 @media (max-width: 1024px) {

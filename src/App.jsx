@@ -36,7 +36,9 @@ import {
   Video,
   Film,
   Upload,
-  Play
+  Play,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import './App.css';
 import { scanLocalDirectory } from './utils/metadataParser';
@@ -263,6 +265,7 @@ function App() {
   const [videoImagePreview, setVideoImagePreview] = useState(null);
   const [videoFilePreview, setVideoFilePreview] = useState(null);
   const [dashscopeApiKey, setDashscopeApiKey] = useState(() => localStorage.getItem('dashscopeApiKey') || '');
+  const [showDashscopeKey, setShowDashscopeKey] = useState(false);
   const [videoApiUrl, setVideoApiUrl] = useState(() => localStorage.getItem('videoApiUrl') || 'https://llm-ioipmcjm1v2f40ks.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis');
   const [showVideoApiSettings, setShowVideoApiSettings] = useState(false);
   const [videoIsGenerating, setVideoIsGenerating] = useState(false);
@@ -359,6 +362,28 @@ function App() {
     setNewModelTag('');
     setShowAddModelModal(false);
     showToast(`新模型 [${modelId}] 已添加并选中！`, 'success');
+  };
+
+  const handleDeleteCustomModel = (modelIdToDelete) => {
+    if (VIDEO_MODELS.some(base => base.id === modelIdToDelete)) {
+      showToast('系统内置原生模型不可删除！', 'warning');
+      return;
+    }
+    const updated = availableVideoModels.filter(m => m.id !== modelIdToDelete);
+    setAvailableVideoModels(updated);
+
+    const customModels = updated.filter(m => !VIDEO_MODELS.some(base => base.id === m.id));
+    localStorage.setItem('custom_video_models', JSON.stringify(customModels));
+
+    if (videoModel === modelIdToDelete) {
+      const remainingForMode = updated.filter(m => !m.mode || m.mode === videoSubTab);
+      if (remainingForMode.length > 0) {
+        setVideoModel(remainingForMode[0].id);
+      } else if (updated.length > 0) {
+        setVideoModel(updated[0].id);
+      }
+    }
+    showToast(`自定义模型 [${modelIdToDelete}] 已成功删除！`, 'success');
   };
 
   const updateVideoCard = (cardId, updates) => {
@@ -2013,6 +2038,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   className={`nav-link-btn nav-link ${activeTab === 'home' ? 'active' : ''}`}
                   onClick={() => setActiveTab('home')}
                 >
+                  <Layers size={15} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom' }} />
                   首页
                 </button>
               </li>
@@ -2021,6 +2047,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   className={`nav-link-btn nav-link ${activeTab === 'gallery' ? 'active' : ''}`}
                   onClick={() => { setActiveTab('gallery'); setSelectedCategory('all'); }}
                 >
+                  <ImageIcon size={15} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom' }} />
                   分类媒体库
                 </button>
               </li>
@@ -2029,6 +2056,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   className={`nav-link-btn nav-link ${activeTab === 'generator' ? 'active' : ''}`}
                   onClick={() => setActiveTab('generator')}
                 >
+                  <Sparkles size={15} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom' }} />
                   提示词生成器
                 </button>
               </li>
@@ -2037,6 +2065,7 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   className={`nav-link-btn nav-link ${activeTab === 'ai-generator' ? 'active' : ''}`}
                   onClick={() => setActiveTab('ai-generator')}
                 >
+                  <Terminal size={15} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom' }} />
                   AI 提示词大师
                 </button>
               </li>
@@ -3187,20 +3216,43 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                       <Settings size={14} /> 接口设置
                     </button>
                   </label>
-                  <div className="v-model-picker-wrapper">
+                  <div className="v-model-picker-wrapper" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <select
                       className="v-model-picker"
+                      style={{ flex: 1 }}
                       value={videoModel}
                       onChange={(e) => setVideoModel(e.target.value)}
                     >
                       {availableVideoModels
                         .filter(m => !m.mode || m.mode === videoSubTab)
-                        .map(model => (
-                          <option key={model.id} value={model.id}>
-                            🎬 {model.id} ({model.tag})
-                          </option>
-                        ))}
+                        .map(model => {
+                          const isCustom = !VIDEO_MODELS.some(base => base.id === model.id);
+                          return (
+                            <option key={model.id} value={model.id}>
+                              🎬 {model.id} ({model.tag}){isCustom ? ' [自定义]' : ''}
+                            </option>
+                          );
+                        })}
                     </select>
+                    {!VIDEO_MODELS.some(base => base.id === videoModel) && (
+                      <button
+                        className="v-settings-btn"
+                        onClick={() => handleDeleteCustomModel(videoModel)}
+                        title="删除选中的自定义模型"
+                        style={{
+                          color: '#ef4444',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          padding: '6px 10px',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <Trash2 size={13} /> 删除
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -3236,6 +3288,47 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                     >
                       确认添加新模型
                     </button>
+
+                    {/* Render list of custom models if any exist */}
+                    {availableVideoModels.filter(m => !VIDEO_MODELS.some(base => base.id === m.id)).length > 0 && (
+                      <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-color, rgba(255,255,255,0.1))' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
+                          已管理/可删除的自定义模型:
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {availableVideoModels
+                            .filter(m => !VIDEO_MODELS.some(base => base.id === m.id))
+                            .map(m => (
+                              <div
+                                key={m.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '6px 10px',
+                                  background: 'rgba(255, 255, 255, 0.05)',
+                                  borderRadius: '6px',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                <div>
+                                  <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{m.id}</span>
+                                  <span style={{ marginLeft: '6px', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>({m.tag})</span>
+                                  <span style={{ marginLeft: '6px', fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>{m.mode || '通用'}</span>
+                                </div>
+                                <button
+                                  className="text-link-btn"
+                                  onClick={() => handleDeleteCustomModel(m.id)}
+                                  title="删除此模型"
+                                  style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '3px' }}
+                                >
+                                  <Trash2 size={13} /> 删除
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -3244,12 +3337,36 @@ Lighting: ${lightObj ? lightObj.prompt : ''}`;
                   <div className="v-api-settings-panel glass-panel animate-fade-in mb-3">
                     <div className="input-group">
                       <label className="field-label">阿里 DashScope API Key</label>
-                      <input
-                        type="password"
-                        value={dashscopeApiKey}
-                        onChange={(e) => setDashscopeApiKey(e.target.value)}
-                        placeholder="sk-..."
-                      />
+                      <div className="v-key-input-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type={showDashscopeKey ? 'text' : 'password'}
+                          value={dashscopeApiKey}
+                          onChange={(e) => setDashscopeApiKey(e.target.value)}
+                          placeholder="sk-..."
+                          style={{ width: '100%', paddingRight: '36px' }}
+                        />
+                        <button
+                          type="button"
+                          className="v-toggle-key-btn"
+                          onClick={() => setShowDashscopeKey(!showDashscopeKey)}
+                          title={showDashscopeKey ? '隐藏 API Key' : '查看 API Key 信息'}
+                          style={{
+                            position: 'absolute',
+                            right: '8px',
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          {showDashscopeKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
                       <span className="field-hint">调用视频合成 API 必需提供有效的 DashScope API Key。</span>
                     </div>
                     <div className="input-group mt-2">

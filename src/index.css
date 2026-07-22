@@ -263,12 +263,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .navbar-container {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .nav-logo {
@@ -309,12 +310,40 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
+.nav-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.nav-action-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary);
+}
+
+.nav-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Grid & Layouts */
 .main-layout {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
   min-height: calc(100vh - 80px);
+  width: 100%;
 }
 
 /* Masonry Layout */
@@ -609,6 +638,17 @@ html.fresh-mint .theme-pill-btn.active {
 html.fresh-mint .nav-link-btn.nav-link:hover, 
 html.fresh-mint .nav-link-btn.nav-link.active {
   background: rgba(16, 185, 129, 0.08);
+}
+
+html.fresh-mint .nav-action-btn {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: #475569;
+}
+html.fresh-mint .nav-action-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: #10b981;
+  color: #0f172a;
 }
 
 html.fresh-mint .nav-logo-text {
@@ -975,7 +1015,7 @@ html.dynamic-anime .category-tab-btn.active {
 }
 
 .footer-container {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
