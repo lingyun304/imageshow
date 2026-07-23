@@ -1,5 +1,28 @@
 # 变更记录
 
+## [1.8.0] - 2026-07-23
+
+### 1. App.jsx 单文件模块化拆分与架构重构
+* **需求背景**:
+  原 `App.jsx` 包含了全站所有业务逻辑与 UI 渲染代码，文件长达 4533 行，造成了严重的重新渲染性能开销、高 Git 冲突概率以及极低的可维护性，需按功能模块进行彻底解耦拆分。
+* **修改覆盖范围**:
+  1. 新增常量定义模块：`src/constants/aiPrompts.js`（AI 样式/光影/构图）、`src/constants/videoModels.js`（生视频模型列表与示例）、`src/constants/translations.js`（媒体分类双语对照字典）。
+  2. 新增工具函数模块：`src/utils/tagParser.js`（Tag 权重解析）、`src/utils/urlUtils.js`（API 代理及任务 URL 转换）。
+  3. 新增独立功能组件：`src/components/Header.jsx`、`src/components/Toast.jsx`、`src/components/Gallery/`（`GalleryFilter`, `GalleryGrid`, `MediaDetailModal`）、`src/components/PromptEditor/`（`TagBuilder`, `PromptMaster`）、`src/components/VideoGen/VideoGenerator.jsx` 及 `src/components/Guide/GuideTab.jsx`。
+  4. 重构 `src/App.jsx`：将 4533 行单文件精简至 ~600 行的主控容器组件，由路由 Tab 驱动渲染各子模块。
+* **功能影响范围**:
+  全站核心架构与组件渲染层，彻底提升了代码可读性、维护性与构建性能，100% 保持原有页面视觉与业务功能一致。
+
+### 2. 交互组件解耦与多模型配置驱动架构支持
+* **需求背景**:
+  针对多生视频模型与提示词工具集，将画廊检索、Tag 权重编辑、LLM 扩充及视频任务生成从顶层组件中剥离，为未来扩展通用配置驱动 (Schema-Driven) 渲染打下架构基础。
+* **修改覆盖范围**:
+  1. 拆分 `GalleryFilter` 与 `MediaDetailModal`，独立管理筛选项与元数据 JSON 节点图查看。
+  2. 拆分 `VideoGenerator` 组件，封装视频模式切换、模型管理、参数调节与任务轮询逻辑。
+  3. 同步更新全部配套系统文档（`doc/requirements.md`、`doc/deployment.md`、`doc/user_guide.md`）。
+* **功能影响范围**:
+  媒体画廊、提示词编辑器及视频生成控制台模块，提升了各业务组件的独立封装与复用能力。
+
 ## [1.7.0] - 2026-07-22
 
 ### 1. 严格仅收录并精确分类用户指定的 10 款最新视频大模型
