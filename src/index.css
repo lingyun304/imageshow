@@ -616,6 +616,29 @@ html.fresh-mint .category-tab-btn.active {
   color: #ffffff;
 }
 
+html.fresh-mint .v-select-pill.active,
+html.fresh-mint .v-ratio-btn.active {
+  background: rgba(16, 185, 129, 0.14) !important;
+  border: 1.5px solid #10b981 !important;
+  color: #047857 !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12) !important;
+}
+
+html.fresh-mint .v-select-pill,
+html.fresh-mint .v-ratio-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #334155;
+}
+
+html.fresh-mint .v-select-pill:hover:not(.active),
+html.fresh-mint .v-ratio-btn:hover:not(.active) {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #0f172a;
+}
+
 html.fresh-mint .card-content.prompt-text.negative {
   color: #be123c;
 }
@@ -713,6 +736,15 @@ html.dynamic-anime .gradient-text {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: pulse-text 2s infinite alternate;
+}
+
+html.dynamic-anime .v-select-pill.active,
+html.dynamic-anime .v-ratio-btn.active {
+  background: rgba(236, 72, 153, 0.15) !important;
+  border: 1.5px solid #f472b6 !important;
+  color: #fbcfe8 !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.2) !important;
 }
 
 @keyframes pulse-text {

@@ -555,34 +555,35 @@ export function VideoGenerator({
             </div>
 
             <div className="v-option-item">
-              <div className="v-slider-header">
-                <label className="v-option-label" style={{ marginBottom: 0 }}>
-                  <span>生成时长</span>
-                  {videoSubTab === 'edit' && (
-                    <span className="v-duration-submode" style={{ marginLeft: '8px' }}>
-                      <button
-                        className={`v-micro-pill ${videoDurationMode === 'align' ? 'active' : ''}`}
-                        onClick={() => setVideoDurationMode('align')}
-                      >
-                        对齐原视频
-                      </button>
-                      <button
-                        className={`v-micro-pill ${videoDurationMode === 'custom' ? 'active' : ''}`}
-                        onClick={() => setVideoDurationMode('custom')}
-                      >
-                        自定义
-                      </button>
-                    </span>
-                  )}
-                </label>
+              <label className="v-option-label">
+                <span>生成时长</span>
                 {!(videoSubTab === 'edit' && videoDurationMode === 'align') && (
                   <span className="v-slider-value">{videoDuration} 秒</span>
                 )}
-              </div>
+              </label>
+
+              {videoSubTab === 'edit' && (
+                <div className="v-pills-row" style={{ marginBottom: '0.4rem' }}>
+                  <button
+                    type="button"
+                    className={`v-select-pill ${videoDurationMode === 'align' ? 'active' : ''}`}
+                    onClick={() => setVideoDurationMode('align')}
+                  >
+                    对齐原视频
+                  </button>
+                  <button
+                    type="button"
+                    className={`v-select-pill ${videoDurationMode === 'custom' ? 'active' : ''}`}
+                    onClick={() => setVideoDurationMode('custom')}
+                  >
+                    自定义时长
+                  </button>
+                </div>
+              )}
 
               {videoSubTab === 'edit' && videoDurationMode === 'align' ? (
                 <div className="v-align-duration-hint">
-                  ⚙️ 已开启“自动对齐原视频时长”模式
+                  ⚙️ 已开启“自动对齐原视频播放时长”模式
                 </div>
               ) : (
                 <div className="v-duration-slider-row">
